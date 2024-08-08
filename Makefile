@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++2a `pkg-config --cflags gtkmm-3.0`
-LDFLAGS = `pkg-config --libs gtkmm-3.0`
-INCLUDES = -Iinclude
+LDFLAGS = `pkg-config --libs gtkmm-3.0` -ljsoncpp -lcurl
+INCLUDES = -Iinclude -I/usr/include/jsoncpp
 
 TARGET = bin/ScanGUI
 
