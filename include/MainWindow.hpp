@@ -1,9 +1,6 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
-#include <gtkmm.h>
-#include <iostream>
-#include <string>
 #include <json/json.h>
 #include "ScanSelect.hpp"
 #include "Scan.hpp"

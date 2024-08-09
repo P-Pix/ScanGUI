@@ -32,10 +32,10 @@ MainWindow::MainWindow() :
     m_File.set_submenu(m_FileMenu);
 
     m_MenuBar.append(m_Download);
-    m_DownloadMenu.append(m_UpdateScan);
-    m_UpdateScan.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_menu_download_update));
     m_DownloadMenu.append(m_NewScan);
     m_NewScan.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_menu_download_new));
+    m_DownloadMenu.append(m_UpdateScan);
+    m_UpdateScan.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_menu_download_update));
     m_Download.set_submenu(m_DownloadMenu);
 
     m_VBox.pack_start(m_MenuBar, Gtk::PACK_SHRINK);
@@ -93,6 +93,15 @@ bool MainWindow::on_image_clic(GdkEventButton* event) {
         } else if (event->button == 3) {
             m_Scan.previous_page();
         }
+        std::ifstream file(selected_folder + "/data.json", std::ifstream::binary); // json file
+        Json::Value json;
+        file >> json;
+        json["save"]["chapter"] = m_Scan.get_chapitre();
+        json["save"]["page"] = m_Scan.get_page_number();
+        file.close();
+        std::ofstream save(selected_folder + "/data.json", std::ofstream::binary);
+        save << json;
+        save.close();
         return true;
     }
     return false;
@@ -139,7 +148,7 @@ void MainWindow::update_scan(std::string folder) {
 
     while (next_page != "") {
         std::string chap = next_page;
-        std::string cut = chap.replace(0, json["download"]["url"].asString().size(), "");
+        std::string cut = chap.replace(0, json["download"]["url"].asString().size() + 1, "");
         if (cut != std::to_string(chapitre) && cut.find("/") == std::string::npos) {
             chapitre++;
             folder_current = folder + "/" + std::to_string(chapitre);
@@ -157,6 +166,7 @@ void MainWindow::update_scan(std::string folder) {
             page++;
         }
         url_picture = download_scan.get_picture_page_lelscan(next_page);
+        std::cout << "Page: " << page << " | url: " << url_picture << std::endl;
         file_name = folder_current + "/" + std::to_string(page) + ".jpg";
         command_picture = "wget -q -O " + file_name + " " + url_picture;
         std::system(command_picture.c_str());

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <gtkmm.h>
 #include <iostream>
+#include <filesystem>
+#include <vector>
 
 class Scan : public Gtk::Image {
 public:

@@ -81,44 +81,25 @@ std::string DownloadScan::get_picture_page_lelscan(std::string site) {
 std::string DownloadScan::url_next_page(std::string url) {
     std::string result = this->get_website_content(url);
     // recupere le body
-    size_t pos = result.find("<body>");
-    if (pos != std::string::npos) {
-        result = result.substr(pos);
-    }
-    pos = result.find("</body>");
-    if (pos != std::string::npos) {
-        result = result.substr(0, pos);
-    }
-    // recupere le center
-    pos = result.find("<center>");
-    if (pos != std::string::npos) {
-        result = result.substr(pos);
-    }
-    pos = result.find("</center>");
-    if (pos != std::string::npos) {
-        result = result.substr(0, pos);
-    }
-    // get "<a href="https://lelscans.net/scan-dr-stone/1/2" title="Suivant" style="float:right;" >"
-    pos = result.find("Suivant");
-    if (pos != std::string::npos) {
-        result = result.substr(0, pos);
-    }
-    pos = result.find("href=\"");
-    if (pos != std::string::npos) {
-        result = result.substr(pos + 6);
-    }
     // recupere à partir de "<div id="image">"
-    pos = result.find("<div id=\"image\">");
+    int pos = result.find("<div id=\"image\">");
     if (pos != std::string::npos) {
         result = result.substr(pos);
     }
-    // recupere le href
-    pos = result.find("href=\"");
+    // recupere à partir de "<a href="
+    pos = result.find("<a href=");
     if (pos != std::string::npos) {
-        result = result.substr(pos + 6);
+        result = result.substr(pos);
     }
-    // recupere le href
-    pos = result.find("\"");
+    // recupere jusqu'à ">"
+    pos = result.find(">");
+    if (pos != std::string::npos) {
+        result = result.substr(0, pos);
+    }
+    // soustraire "<a href="
+    result = result.substr(8);
+    //recupere jusqu'à "title"
+    pos = result.find("title");
     if (pos != std::string::npos) {
         result = result.substr(0, pos);
     }
