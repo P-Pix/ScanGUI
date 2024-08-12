@@ -26,6 +26,9 @@ public:
     void set_page(std::string folder, int chapitre, int page_number);
     void set_page(std::string page_path);
 
+    void zoom_in();
+    void zoom_out();
+
     int get_chapitre();
     int get_page_number();
 

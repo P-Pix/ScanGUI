@@ -87,17 +87,29 @@ int Scan::get_page_number() {
 
 void Scan::set_page(std::string page_path) {
     Glib::RefPtr<Gdk::Pixbuf> original_pixbuf = Gdk::Pixbuf::create_from_file(page_path);
-    int width = original_pixbuf->get_width();
-    int height = original_pixbuf->get_height();
-    if (width > this->width) {
-        height = height * this->width / width;
-        width = this->width;
-    } else if (height > this->height) {
-        width = width * this->height / height;
-        height = this->height;
+    int w = original_pixbuf->get_width();
+    int h = original_pixbuf->get_height();
+    if (w > this->width) {
+        h = h * this->width / w;
+        w = this->width;
+    } else if (h > this->height) {
+        w = w * this->height / h;
+        h = this->height;
     }
-    Glib::RefPtr<Gdk::Pixbuf> resized_pixbuf = original_pixbuf->scale_simple(width, height, Gdk::INTERP_BILINEAR);
+    Glib::RefPtr<Gdk::Pixbuf> resized_pixbuf = original_pixbuf->scale_simple(w, h, Gdk::INTERP_BILINEAR);
     this->set(resized_pixbuf);
+}
+
+void Scan::zoom_in() {
+    this->set_width(this->width * 1.1);
+    this->set_height(this->height * 1.1);
+    this->set_page(this->get_page());
+}
+
+void Scan::zoom_out() {
+    this->set_width(this->width * 0.9);
+    this->set_height(this->height * 0.9);
+    this->set_page(this->get_page());
 }
 
 void Scan::set_page(std::string folder, int chapitre, int page_number) {

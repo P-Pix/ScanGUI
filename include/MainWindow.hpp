@@ -14,15 +14,22 @@ public:
 
 protected:
     bool on_image_clic(GdkEventButton* event);
+    bool on_key_press(GdkEventKey* event);
 
 private:
-    const int WIDTH = 1920;
-    const int HEIGHT = 1080;
+    const int WIDTH = Gdk::screen_width();
+    const int HEIGHT = Gdk::screen_height() - 100;
 
     std::string selected_folder;
 
     Gtk::Box m_VBox;
     Gtk::MenuBar m_MenuBar;
+
+    Gtk::Grid m_Grid;
+    std::vector<Gtk::Button*> m_ListButtonManga;
+    Gtk::Grid m_GridListeManga;
+    Gtk::ScrolledWindow m_ScrollListeManga;
+    Gtk::ScrolledWindow m_ScrollImage;
 
     Gtk::MenuItem m_File;
     Gtk::Menu m_FileMenu;
@@ -48,6 +55,10 @@ private:
 
     void update_scan(std::string folder);
     void download_picture(std::string folder, std::string url);
+
+    void liste_manga();
+
+    void open_Scan(std::string folder);
 };
 
 #endif // !MAINWINDOW_HPP
