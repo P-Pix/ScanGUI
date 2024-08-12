@@ -22,5 +22,9 @@ int main(int argc, char** argv) {
 
     MainWindow window;
 
+    auto icon = Gdk::Pixbuf::create_from_file("./asset/icon2.png");
+
+    window.set_icon(icon);
+
     return app->run(window);
 }
