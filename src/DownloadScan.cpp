@@ -43,7 +43,7 @@ std::string DownloadScan::get_website_content(std::string site) {
     return result;
 }
 
-std::string DownloadScan::get_picture_page_lelscan(std::string site) {
+std::string DownloadScan::download_picture_page_lelscan(std::string site) {
     std::string result = this->get_website_content(site);
     // recupere le body
     size_t pos = result.find("<body>");
@@ -78,7 +78,7 @@ std::string DownloadScan::get_picture_page_lelscan(std::string site) {
     return "https://lelscans.net/" + result;
 }
 
-std::string DownloadScan::url_next_page(std::string url) {
+std::string DownloadScan::url_next_page_lelscan(std::string url) {
     std::string result = this->get_website_content(url);
     // recupere le body
     // recupere à partir de "<div id="image">"
@@ -106,10 +106,30 @@ std::string DownloadScan::url_next_page(std::string url) {
     return result;
 }
 
+void DownloadScan::download_picture_page(std::string site, std::string file_name) {
+    std::string link = "";
+    if (site.find("lelscans") != std::string::npos) {
+        link = this->download_picture_page_lelscan(site);
+        std::cout << "DownloadScan: " << link << std::endl;
+    }
+    if (link != "") {
+        std::string command = "wget -q -O " + file_name + " " + link;
+        std::cout << "DownloadScan: " << command << std::endl;
+        std::system(command.c_str());
+    }
+}
+
 std::string DownloadScan::next_page() {
     return "";
 }
 
 std::string DownloadScan::previous_page() {
+    return "";
+}
+
+std::string DownloadScan::get_next_page_url(std::string url) {
+    if (url.find("lelscans") != std::string::npos) {
+        return this->url_next_page_lelscan(url);
+    }
     return "";
 }

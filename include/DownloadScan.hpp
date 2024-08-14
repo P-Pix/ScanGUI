@@ -11,13 +11,6 @@
 #include <string>
 #include <array>
 
-/*
- * https://lelscans.net/scan-dr-stone/195/4
- * body/center/div id="image"/table/tbody/tr/td/a/img src="/mangas/dr-stone/195/03.jpg?v=fr1620975509"
- * https://lelscans.net/mangas/dr-stone/195/03.jpg
- * https://lelscans.net/mangas/dr-stone/195/04.jpg
-*/
-
 class DownloadScan {
 public:
     DownloadScan();
@@ -31,8 +24,9 @@ public:
     std::string next_page();
     std::string previous_page();
 
-    std::string get_picture_page_lelscan(std::string site);
-    std::string url_next_page(std::string url);
+    void download_picture_page(std::string site, std::string file_name);
+
+    std::string get_next_page_url(std::string url);
 
 protected:
 
@@ -42,6 +36,8 @@ private:
     int page;
     int chapitre;
 
+    std::string url_next_page_lelscan(std::string url);
+    std::string download_picture_page_lelscan(std::string site);
     size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s);
 };
 

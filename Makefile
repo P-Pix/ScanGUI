@@ -3,7 +3,8 @@ CXXFLAGS = -std=c++2a `pkg-config --cflags gtkmm-3.0`
 LDFLAGS = `pkg-config --libs gtkmm-3.0` -ljsoncpp -lcurl -Wall -Wextra -Wpedantic
 INCLUDES = -Iinclude -I/usr/include/jsoncpp
 
-TARGET = bin/ScanGUI
+TARGET = bin/ScanGUI44# Inclure les fichiers de dépendances s'ils existent
+-include $(DEPS)
 
 # Trouver tous les fichiers source dans le répertoire src
 SRCS := $(wildcard src/*.cpp)
@@ -29,10 +30,8 @@ compile: $(TARGET)
 
 recompile: clean compile
 
-# Inclure les fichiers de dépendances s'ils existent
--include $(DEPS)
-
 init:
+	@mkdir -p scan
 	@mkdir -p bin
 	@mkdir -p lib
 
@@ -42,5 +41,8 @@ run: $(TARGET)
 clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
 	rm -rf lib/*.*
+
+mrproper: clean
+	rm -rf bin/*.*
 
 .PHONY: all clean init run

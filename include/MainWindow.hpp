@@ -40,9 +40,11 @@ private:
     Gtk::MenuItem m_Download;
     Gtk::Menu m_DownloadMenu;
     Gtk::MenuItem m_UpdateScan;
+    Gtk::MenuItem m_UpdateAllScan;
     Gtk::MenuItem m_NewScan; // ouvre une fenetre avec une demande d'url pour le scan
 
     Scan m_Scan;
+    Json::Value m_current_scan;
 
     Gtk::EventBox m_EventBox;
 
@@ -54,11 +56,14 @@ private:
     void on_menu_download_new();
 
     void update_scan(std::string folder);
-    void download_picture(std::string folder, std::string url);
-
+    
     void liste_manga();
 
     void open_Scan(std::string folder);
+
+    void update_all_scan();
+
+    std::string new_chapter(std::string folder, std::string url);
 };
 
 #endif // !MAINWINDOW_HPP
