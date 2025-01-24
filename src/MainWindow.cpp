@@ -19,9 +19,14 @@ MainWindow::MainWindow() :
         m_Grid(),
         m_GridListeManga(), 
         m_ScrollImage(),
+        m_go_to(),
+        m_Entry_page(),
+        m_Entry_chapter(),
+        m_Button_go_to(),
+        m_GridImage_go_to(),
         m_UpdateAllScan("Update all") {
     set_title("Scan Manager");
-    set_default_size(this->WIDTH, this->HEIGHT);
+    set_default_size(this->WIDTH_WINDOW, this->HEIGHT_WINDOW);
     set_position(Gtk::WIN_POS_CENTER);
 
     add_events(Gdk::KEY_PRESS_MASK);
@@ -34,11 +39,34 @@ MainWindow::MainWindow() :
     this->m_EventBox.signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::on_image_clic));
     this->m_ScrollImage.add(this->m_EventBox);
 
+    // this->m_Entry_page set text in background
+    this->m_Entry_page.set_placeholder_text("Page");
+    this->m_go_to.attach(this->m_Entry_page, 0, 0, 1, 1);
+    this->m_Entry_chapter.set_placeholder_text("Chapter");
+    this->m_go_to.attach(this->m_Entry_chapter, 1, 0, 1, 1);
+    this->m_go_to.attach(this->m_Button_go_to, 2, 0, 1, 1);
+    this->m_Button_go_to.set_label("Go to");
+    this->m_Button_go_to.signal_clicked().connect([this]() {
+        int page = std::stoi(this->m_Entry_page.get_text());
+        int chapter = std::stoi(this->m_Entry_chapter.get_text());
+        if (page < 1) {
+            page = 1;
+        }
+        if (chapter < 1) {
+            chapter = 1;
+        }
+        this->m_Scan.set_page(this->selected_folder, chapter, page);
+    });
+    this->m_go_to.set_column_homogeneous(true);
+
+    this->m_GridImage_go_to.attach(this->m_go_to, 0, 1, 1, 1);
+    this->m_GridImage_go_to.attach(this->m_ScrollImage, 0, 0, 1, 1);
+
     this->liste_manga();
 
     // faire une colone de petite taille pour box manga et mettre le reste pour eventbox
     this->m_Grid.attach(this->m_ScrollListeManga, 0, 0, 1, 1);
-    this->m_Grid.attach(this->m_ScrollImage, 1, 0, 1, 1);
+    this->m_Grid.attach(this->m_GridImage_go_to, 1, 0, 1, 1);
     this->m_Grid.set_column_homogeneous(false);
 
     this->m_EventBox.set_hexpand(true);
@@ -264,7 +292,7 @@ void MainWindow::update_scan(std::string folder) {
         // télécharge l'image courante
         std::string folder_current = folder + "/" + this->m_current_scan["download"]["chapter"].asString();
         download_scan.download_picture_page(url, folder_current + "/" + this->m_current_scan["download"]["page"].asString() + ".jpg");
-        
+
         // récupère l'url de la page suivante
         std::string next_page = download_scan.get_next_page_url(url);
         std::cout << "Next page: " << next_page << std::endl;
@@ -273,13 +301,15 @@ void MainWindow::update_scan(std::string folder) {
         url = this->new_chapter(folder, next_page);
     } while (url != "");
 
+    std::cout << "Download End" << std::endl;
+
     std::ofstream save(data, std::ofstream::binary);
     save << this->m_current_scan;
     save.close();
 }
 
 std::string MainWindow::new_chapter(std::string folder, std::string url) {
-    if (url == "/1" || url == "#main_hot") {
+    if (url == "/1" || url == "#main_hot" || url == "") {
         return "";
     }
 

@@ -3,6 +3,7 @@
 #include <gtkmm/application.h>
 #include <random>
 #include <ctime>
+//#include <discord_rpc.h>
 
 std::string randomString(int length) {
     std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
@@ -26,5 +27,20 @@ int main(int argc, char** argv) {
 
     window.set_icon(icon);
 
+    /*
+    // Discord
+    DiscordEventHandlers handlers;
+    memset(&handlers, 0, sizeof(handlers));
+    Discord_Initialize("898013013013013013", &handlers, 1, nullptr);
+
+    DiscordRichPresence discordPresence;
+    memset(&discordPresence, 0, sizeof(discordPresence));
+    discordPresence.state = "Lecture de manga";
+    discordPresence.details = "Lecture de manga";
+    discordPresence.largeImageKey = "icon";
+    discordPresence.largeImageText = "Manga Reader";
+    Discord_UpdatePresence(&discordPresence);
+    */
+    
     return app->run(window);
 }
