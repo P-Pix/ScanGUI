@@ -60,6 +60,9 @@ void Scan::previous_page() {
         page--;
     } else {
         std::vector<std::string> file_name_v = std::vector<std::string>();
+        if (chapitre == 1) {
+            return;
+        }
         for (const auto & entry : std::filesystem::directory_iterator(folder + "/" + std::to_string(chapitre - 1))) {
             file_name_v.push_back(entry.path());
         }

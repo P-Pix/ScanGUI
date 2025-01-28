@@ -3,7 +3,7 @@ CXXFLAGS = -std=c++2a `pkg-config --cflags gtkmm-3.0`
 LDFLAGS = `pkg-config --libs gtkmm-3.0` -ljsoncpp -lcurl -Wall -Wextra -Wpedantic
 INCLUDES = -Iinclude -I/usr/include/jsoncpp
 
-TARGET = bin/ScanGUI44# Inclure les fichiers de dépendances s'ils existent
+TARGET = bin/ScanGUI # Inclure les fichiers de dépendances s'ils existent
 -include $(DEPS)
 
 # Trouver tous les fichiers source dans le répertoire src
