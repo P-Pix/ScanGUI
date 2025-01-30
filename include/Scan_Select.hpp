@@ -1,5 +1,5 @@
-#ifndef SCANSELECT_HPP
-#define SCANSELECT_HPP
+#ifndef SCAN_SELECT_HPP
+#define SCAN_SELECT_HPP
 
 #include <gtkmm.h>
 #include <iostream>
@@ -12,12 +12,12 @@ namespace fs = std::filesystem;
 /**
  * @brief Classe permettant d'ouvrir une nouvelle fenetre avec la liste des dossier dans le dossier scan
  * La fenetre est composer d'une liste déroulante avec la possibilité de selectionner un dossier et d'un bouton pour valider la selection
- * Une fois fait la fenetre se ferme et le scan s'ouvre dans la MainWindow
+ * Une fois fait la fenetre se ferme et le scan s'ouvre dans la Main_Window
  */
-class ScanSelect : public Gtk::Window {
+class Scan_Select : public Gtk::Window {
 public:
-    ScanSelect();
-    virtual ~ScanSelect();
+    Scan_Select();
+    virtual ~Scan_Select();
 
     std::string get_selected_folder() const { return selected_folder; }
     
@@ -34,4 +34,4 @@ protected:
     std::string selected_folder;
 };
 
-#endif // !SCANSELECT_HPP
+#endif // !SCAN_SELECT_HPP

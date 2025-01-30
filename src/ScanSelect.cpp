@@ -1,6 +1,6 @@
-#include "ScanSelect.hpp"
+#include "Scan_Select.hpp"
 
-ScanSelect::ScanSelect()
+Scan_Select::Scan_Select()
     : button_validate("Valider") {
     set_title("Sélectionnez un dossier");
     set_default_size(300, 100);
@@ -12,8 +12,8 @@ ScanSelect::ScanSelect()
         }
     }
 
-    combo_folders.signal_changed().connect(sigc::mem_fun(*this, &ScanSelect::on_folder_selected));
-    button_validate.signal_clicked().connect(sigc::mem_fun(*this, &ScanSelect::on_button_clicked));
+    combo_folders.signal_changed().connect(sigc::mem_fun(*this, &Scan_Select::on_folder_selected));
+    button_validate.signal_clicked().connect(sigc::mem_fun(*this, &Scan_Select::on_button_clicked));
 
     // Layout
     Gtk::Box *vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 5);
@@ -29,14 +29,14 @@ ScanSelect::ScanSelect()
     show_all_children();
 }
 
-ScanSelect::~ScanSelect() {
+Scan_Select::~Scan_Select() {
 }
 
-void ScanSelect::on_folder_selected() {
+void Scan_Select::on_folder_selected() {
     selected_folder = combo_folders.get_active_text();
 }
 
-void ScanSelect::on_button_clicked() {
+void Scan_Select::on_button_clicked() {
     if (!selected_folder.empty()) {
         std::cout << "Dossier sélectionné : " << selected_folder << std::endl;
         hide(); // Ferme la fenêtre après validation

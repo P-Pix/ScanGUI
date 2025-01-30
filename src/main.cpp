@@ -1,4 +1,4 @@
-#include "MainWindow.hpp"
+#include "Main_Window.hpp"
 
 #include <gtkmm/application.h>
 #include <random>
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     auto app = Gtk::Application::create(argc, argv, "org.gtkmm.example");
     //auto app = Gtk::Application::create(argc, argv, randomString(32));
 
-    MainWindow window;
+    Main_Window window;
 
     auto icon = Gdk::Pixbuf::create_from_file("./asset/icon2.png");
 

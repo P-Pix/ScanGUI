@@ -1,12 +1,12 @@
 #include "Scan.hpp"
 
-Scan::Scan() : folder(""), page(0), chapitre(0), width(0), height(0) {
+Scan::Scan() : folder(""), page(1), chapitre(1), width(0), height(0) {
 }
 
-Scan::Scan(int width, int height) : folder(""), page(0), chapitre(0), width(width), height(height) {
+Scan::Scan(int width, int height) : folder(""), page(1), chapitre(1), width(width), height(height) {
 }
 
-Scan::Scan(std::string folder, int width, int height) : folder(folder), page(0), chapitre(0), width(width), height(height) {
+Scan::Scan(std::string folder, int width, int height) : folder(folder), page(1), chapitre(1), width(width), height(height) {
 }
 
 Scan::Scan(std::string folder, int page, int chapitre, int width, int height) : folder(folder), page(page), chapitre(chapitre), width(width), height(height) {
@@ -86,6 +86,32 @@ int Scan::get_chapitre() {
 
 int Scan::get_page_number() {
     return page;
+}
+
+int Scan::get_max_chapter() {
+    if (folder == "") {
+        return 0;
+    }
+    int max_chapitre = 0;
+    for (const auto & entry : std::filesystem::directory_iterator(folder)) {
+        if (entry.is_directory()) {
+            max_chapitre++;
+        }
+    }
+    return max_chapitre;
+}
+
+int Scan::get_max_page() {
+    if (folder == "") {
+        return 0;
+    }
+    int max_page = 0;
+    for (const auto & entry : std::filesystem::directory_iterator(folder + "/" + std::to_string(chapitre))) {
+        if (entry.is_regular_file()) {
+            max_page++;
+        }
+    }
+    return max_page;
 }
 
 void Scan::set_page(std::string page_path) {

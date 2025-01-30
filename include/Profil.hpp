@@ -17,4 +17,4 @@ class Profil {
         std::string get_name();
 
         void set_name(std::string name);
-}
+};

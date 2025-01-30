@@ -1,11 +1,11 @@
-#include "NewDownloadWindow.hpp"
+#include "New_Download_Window.hpp"
 
-NewDownloadWindow::NewDownloadWindow() : m_VBox(Gtk::ORIENTATION_VERTICAL), m_Entry(), m_Button("Download") {
+New_Download_Window::New_Download_Window() : m_VBox(Gtk::ORIENTATION_VERTICAL), m_Entry(), m_Button("Download") {
     set_title("New Download");
     set_border_width(10);
     set_default_size(200, 100);
 
-    m_Button.signal_clicked().connect(sigc::mem_fun(*this, &NewDownloadWindow::on_button_clicked));
+    m_Button.signal_clicked().connect(sigc::mem_fun(*this, &New_Download_Window::on_button_clicked));
 
     m_VBox.pack_start(m_Entry);
     m_VBox.pack_start(m_Button);
@@ -15,10 +15,10 @@ NewDownloadWindow::NewDownloadWindow() : m_VBox(Gtk::ORIENTATION_VERTICAL), m_En
     show_all_children();
 }
 
-NewDownloadWindow::~NewDownloadWindow() {
+New_Download_Window::~New_Download_Window() {
 }
 
-void NewDownloadWindow::on_button_clicked() {
+void New_Download_Window::on_button_clicked() {
     std::string url = m_Entry.get_text();
     if (url.find("https://lelscans.net/") != std::string::npos) {
         url.replace(0, 26, "").replace(url.begin() + url.find("/"), url.end(), "");

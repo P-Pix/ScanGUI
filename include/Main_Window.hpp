@@ -1,16 +1,16 @@
-#ifndef MAINWINDOW_HPP
-#define MAINWINDOW_HPP
+#ifndef MAIN_WINDOW_HPP
+#define MAIN_WINDOW_HPP
 
 #include <json/json.h>
-#include "ScanSelect.hpp"
+#include "Scan_Select.hpp"
 #include "Scan.hpp"
-#include "NewDownloadWindow.hpp"
-#include "DownloadScan.hpp"
+#include "New_Download_Window.hpp"
+#include "Download_Scan.hpp"
 
-class MainWindow : public Gtk::Window {
+class Main_Window : public Gtk::Window {
 public:
-    MainWindow();
-    virtual ~MainWindow();
+    Main_Window();
+    virtual ~Main_Window();
 
 protected:
     bool on_image_clic(GdkEventButton* event);
@@ -102,7 +102,12 @@ private:
      */
     void open_Scan(std::string folder);
 
+    /**
+     * Fonction pour charger la page et le chapitre saisi 
+     */
+    void go_to(void);
+
     std::string new_chapter(std::string folder, std::string url);
 };
 
-#endif // !MAINWINDOW_HPP
+#endif // !Main_Window_HPP

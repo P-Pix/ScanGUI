@@ -1,30 +1,30 @@
-#include "DownloadScan.hpp"
+#include "Download_Scan.hpp"
 
-DownloadScan::DownloadScan() : website(""), folder(""), page(0), chapitre(0) {
+Download_Scan::Download_Scan() : website(""), folder(""), page(0), chapitre(0) {
 }
 
-DownloadScan::DownloadScan(std::string website) : website(website), folder("One_Piece"), page(0), chapitre(0) {
-    std::cout << "DownloadScan: " << website << std::endl;
+Download_Scan::Download_Scan(std::string website) : website(website), folder("One_Piece"), page(0), chapitre(0) {
+    std::cout << "Download_Scan: " << website << std::endl;
 }
 
-DownloadScan::~DownloadScan() {
+Download_Scan::~Download_Scan() {
 }
 
-void DownloadScan::set_website(std::string website) {
+void Download_Scan::set_website(std::string website) {
     this->website = website;
 }
 
-size_t DownloadScan::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
+size_t Download_Scan::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
     size_t totalSize = size * nmemb;
     s->append(static_cast<char*>(contents), totalSize);
     return totalSize;
 }
 
-std::string DownloadScan::get_website() {
+std::string Download_Scan::get_website() {
     return this->website;
 }
 
-std::string DownloadScan::get_website_content(std::string site) {
+std::string Download_Scan::get_website_content(std::string site) {
     std::string command = "wget -q -O - " + site;
     std::array<char, 128> buffer;
     std::string result;
@@ -43,7 +43,7 @@ std::string DownloadScan::get_website_content(std::string site) {
     return result;
 }
 
-std::string DownloadScan::download_picture_page_lelscan(std::string site) {
+std::string Download_Scan::download_picture_page_lelscan(std::string site) {
     std::string result = this->get_website_content(site);
     // recupere le body
     size_t pos = result.find("<body>");
@@ -78,7 +78,7 @@ std::string DownloadScan::download_picture_page_lelscan(std::string site) {
     return "https://lelscans.net/" + result;
 }
 
-std::string DownloadScan::url_next_page_lelscan(std::string url) {
+std::string Download_Scan::url_next_page_lelscan(std::string url) {
     std::string result = this->get_website_content(url);
     // recupere le body
     // recupere à partir de "<div id="image">"
@@ -106,28 +106,28 @@ std::string DownloadScan::url_next_page_lelscan(std::string url) {
     return result;
 }
 
-void DownloadScan::download_picture_page(std::string site, std::string file_name) {
+void Download_Scan::download_picture_page(std::string site, std::string file_name) {
     std::string link = "";
     if (site.find("lelscans") != std::string::npos) {
         link = this->download_picture_page_lelscan(site);
-        std::cout << "DownloadScan: " << link << std::endl;
+        std::cout << "Download_Scan: " << link << std::endl;
     }
     if (link != "") {
         std::string command = "wget -q -O " + file_name + " " + link;
-        std::cout << "DownloadScan: " << command << std::endl;
+        std::cout << "Download_Scan: " << command << std::endl;
         std::system(command.c_str());
     }
 }
 
-std::string DownloadScan::next_page() {
+std::string Download_Scan::next_page() {
     return "";
 }
 
-std::string DownloadScan::previous_page() {
+std::string Download_Scan::previous_page() {
     return "";
 }
 
-std::string DownloadScan::get_next_page_url(std::string url) {
+std::string Download_Scan::get_next_page_url(std::string url) {
     if (url.find("lelscans") != std::string::npos) {
         return this->url_next_page_lelscan(url);
     }

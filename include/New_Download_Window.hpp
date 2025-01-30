@@ -1,5 +1,5 @@
-#ifndef NewDownloadWindowWINDOW_HPP
-#define NewDownloadWindowWINDOW_HPP
+#ifndef NEW_DOWNLOAD_WINDOW_HPP
+#define NEW_DOWNLOAD_WINDOW_HPP
 
 #include <gtkmm.h>
 #include <iostream>
@@ -7,10 +7,10 @@
 #include <cstdlib>
 #include <fstream>
 
-class NewDownloadWindow : public Gtk::Window {
+class New_Download_Window : public Gtk::Window {
 public:
-    NewDownloadWindow();
-    virtual ~NewDownloadWindow();
+    New_Download_Window();
+    virtual ~New_Download_Window();
 
     std::string get_website() const { return m_Entry.get_text(); }
 
@@ -28,4 +28,4 @@ private:
 };
 
 
-#endif // !NewDownloadWindowWINDOW_HPP
+#endif // !NEW_DOWNLOAD_WINDOW_HPP
