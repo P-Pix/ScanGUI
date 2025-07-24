@@ -42,7 +42,7 @@ Main_Window::Main_Window() :
     // this->m_Entry_page set text in background
     this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
     this->m_go_to.attach(this->m_Entry_page, 0, 0, 1, 1);
-    this->m_Entry_chapter.set_placeholder_text("Chapter, actuelle : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+    this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
     this->m_go_to.attach(this->m_Entry_chapter, 1, 0, 1, 1);
     this->m_go_to.attach(this->m_Button_go_to, 2, 0, 1, 1);
     this->m_Button_go_to.set_label("Go to");
@@ -197,11 +197,11 @@ bool Main_Window::on_key_press(GdkEventKey* event) {
     if (event->keyval == GDK_KEY_Right) {
         m_Scan.next_page();
         this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapter, actuelle : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
     } else if (event->keyval == GDK_KEY_Left) {
         m_Scan.previous_page();
         this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapter, actuelle : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
     } else if (event->keyval == GDK_KEY_plus || event->keyval == GDK_KEY_KP_Add) {
         m_Scan.zoom_in();
     } else if (event->keyval == GDK_KEY_minus || event->keyval == GDK_KEY_KP_Subtract) {
@@ -236,7 +236,7 @@ void Main_Window::open_Scan(std::string folder) {
     int chapitre = json["save"]["chapter"].asInt();
     m_Scan.set_page(selected_folder, chapitre, page);
     this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-    this->m_Entry_chapter.set_placeholder_text("Chapter, actuelle : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+    this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
 }
 
 void Main_Window::on_menu_file_save() {
@@ -275,7 +275,7 @@ bool Main_Window::on_image_clic(GdkEventButton* event) {
         save << json;
         save.close();
         this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapter, actuelle : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
         return true;
     }
     return false;
