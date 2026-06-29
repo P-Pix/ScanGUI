@@ -1,37 +1,33 @@
+/**
+ * @file Scan_Select.hpp
+ * @brief Déclare la boîte de dialogue GTK de sélection d'une lecture existante.
+ *
+ * La fenêtre liste les dossiers présents dans `./scan` afin de conserver le mode d'ouverture
+ * direct de la version desktop initiale.
+ */
+
 #ifndef SCAN_SELECT_HPP
 #define SCAN_SELECT_HPP
 
 #include <gtkmm.h>
-#include <iostream>
+
 #include <filesystem>
-#include <vector>
 #include <string>
 
-namespace fs = std::filesystem;
-
 /**
- * @brief Classe permettant d'ouvrir une nouvelle fenetre avec la liste des dossier dans le dossier scan
- * La fenetre est composer d'une liste déroulante avec la possibilité de selectionner un dossier et d'un bouton pour valider la selection
- * Une fois fait la fenetre se ferme et le scan s'ouvre dans la Main_Window
+ * @brief Dialogue GTK de choix d'un dossier de scan existant.
+ *
+ * Ce composant conserve le parcours utilisateur historique d'ouverture depuis `./scan`.
  */
-class Scan_Select : public Gtk::Window {
+class Scan_Select : public Gtk::Dialog {
 public:
-    Scan_Select();
+    explicit Scan_Select(Gtk::Window& parent);
     virtual ~Scan_Select();
 
-    std::string get_selected_folder() const { return selected_folder; }
-    
-protected:
-    // Signal handlers:
-    void on_folder_selected();
-    void on_button_clicked();
+    [[nodiscard]] std::string get_selected_folder() const;
 
-    // Member widgets:
-    Gtk::ComboBoxText combo_folders;
-    Gtk::Button button_validate;
-
-    // Variables:
-    std::string selected_folder;
+private:
+    Gtk::ComboBoxText combo_folders_;
 };
 
-#endif // !SCAN_SELECT_HPP
+#endif

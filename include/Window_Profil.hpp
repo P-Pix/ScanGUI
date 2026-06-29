@@ -1,3 +1,11 @@
+/**
+ * @file Window_Profil.hpp
+ * @brief Déclare la fenêtre GTK historique de saisie de profil.
+ *
+ * Cette fenêtre représente l'amorce de gestion de profil utilisateur prévue dans l'ancien
+ * projet et conserve les widgets nécessaires à la saisie d'un nom.
+ */
+
 #pragma once
 
 #include <iostream>
@@ -6,6 +14,12 @@
 
 #include "Profil.hpp"
 
+/**
+ * @brief Fenêtre GTK historique dédiée à la saisie d'un profil.
+ *
+ * Elle regroupe les widgets de saisie et le modèle `Profil` sans encore porter de logique de
+ * persistance avancée.
+ */
 class Window_Profil : public Gtk::Window {
     public:
         Window_Profil();

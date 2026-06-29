@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: scangui-postgres
+    environment:
+      POSTGRES_DB: scangui
+      POSTGRES_USER: scangui
+      POSTGRES_PASSWORD: scangui
+    ports:
+      - "5432:5432"
+    volumes:
+      - scangui-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  scangui-postgres-data:

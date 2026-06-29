@@ -1,157 +1,166 @@
+/**
+ * @file Scan.cpp
+ * @brief Implémente le widget d'affichage d'une page de scan.
+ *
+ * Le widget charge les images, applique le redimensionnement et délègue la résolution des
+ * pages au moteur `ScanSession`.
+ */
+
 #include "Scan.hpp"
 
-Scan::Scan() : folder(""), page(1), chapitre(1), width(0), height(0) {
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+
+Scan::Scan() = default;
+
+Scan::Scan(int width, int height) : width_(width), height_(height) {
 }
 
-Scan::Scan(int width, int height) : folder(""), page(1), chapitre(1), width(width), height(height) {
+Scan::Scan(std::string folder, int width, int height) : session_(std::move(folder)), width_(width), height_(height) {
+    display_current_page();
 }
 
-Scan::Scan(std::string folder, int width, int height) : folder(folder), page(1), chapitre(1), width(width), height(height) {
+Scan::Scan(std::string folder, int page, int chapitre, int width, int height)
+    : session_(std::move(folder), ScanProgress{chapitre, page}), width_(width), height_(height) {
+    display_current_page();
 }
 
-Scan::Scan(std::string folder, int page, int chapitre, int width, int height) : folder(folder), page(page), chapitre(chapitre), width(width), height(height) {
+Scan::~Scan() = default;
+
+void Scan::set_folder(const std::string& folder) {
+    session_.open(folder, session_.progress());
 }
 
-Scan::~Scan() {
+std::string Scan::get_folder() const {
+    return session_.root().string();
 }
 
-void Scan::set_folder(std::string folder) {
-    this->folder = folder;
+bool Scan::next_page() {
+    const auto page = session_.next_page();
+    if (!page) {
+        return false;
+    }
+    return set_page(page->path);
 }
 
-std::string Scan::get_folder() {
-    return folder;
+bool Scan::previous_page() {
+    const auto page = session_.previous_page();
+    if (!page) {
+        return false;
+    }
+    return set_page(page->path);
 }
 
-void Scan::next_page() {
-    std::string page_path = folder + "/" + std::to_string(chapitre) + "/" + std::to_string(page + 1) + ".jpg";
-    if (std::ifstream(page_path)) {
-        page++;
-    } else {
-        std::string chapitre_path = folder + "/" + std::to_string(chapitre + 1) + "/" + std::to_string(1) + ".jpg";
-        if (std::ifstream(chapitre_path)) {
-            chapitre++;
-            page = 1;
+std::string Scan::get_page() const {
+    return session_.current_page_path().string();
+}
+
+bool Scan::set_page(const std::string& folder, int chapitre, int page_number) {
+    ScanProgress progress{chapitre, page_number};
+    progress.normalize();
+    session_.open(folder, progress);
+
+    if (!session_.current_page()) {
+        auto fallback = ScanProgress{1, 1};
+        session_.open(folder, fallback);
+    }
+
+    return display_current_page();
+}
+
+/**
+ * @brief Charge et affiche une image depuis un chemin local.
+ *
+ * Objectif projet :
+ * Centraliser le redimensionnement et la gestion d'erreur image pour éviter que la fenêtre
+ * principale manipule directement `Gdk::Pixbuf`.
+ */
+bool Scan::set_page(const std::filesystem::path& page_path) {
+    if (page_path.empty() || !std::filesystem::exists(page_path)) {
+        clear();
+        return false;
+    }
+
+    try {
+        Glib::RefPtr<Gdk::Pixbuf> original_pixbuf = Gdk::Pixbuf::create_from_file(page_path.string());
+        int targetWidth = original_pixbuf->get_width();
+        int targetHeight = original_pixbuf->get_height();
+
+        if (width_ > 0 && height_ > 0 && targetWidth > 0 && targetHeight > 0) {
+            const double scale = std::min({
+                static_cast<double>(width_) / static_cast<double>(targetWidth),
+                static_cast<double>(height_) / static_cast<double>(targetHeight),
+                1.0
+            });
+            targetWidth = std::max(1, static_cast<int>(std::lround(targetWidth * scale)));
+            targetHeight = std::max(1, static_cast<int>(std::lround(targetHeight * scale)));
         }
+
+        Glib::RefPtr<Gdk::Pixbuf> resized_pixbuf = original_pixbuf->scale_simple(targetWidth, targetHeight, Gdk::INTERP_HYPER);
+        set(resized_pixbuf);
+        return true;
+    } catch (const Glib::Error& error) {
+        std::cerr << "Impossible d'afficher l'image " << page_path << ": " << error.what() << std::endl;
+        clear();
+        return false;
+    } catch (const std::exception& error) {
+        std::cerr << "Impossible d'afficher l'image " << page_path << ": " << error.what() << std::endl;
+        clear();
+        return false;
     }
-    this->set_page(this->get_page());
-}
-
-int extractNumber(const std::string& filepath) {
-    size_t lastSlash = filepath.find_last_of('/');
-    size_t startPos = lastSlash != std::string::npos ? lastSlash + 1 : 0;
-    size_t dotPos = filepath.find('.', startPos);
-    size_t i = startPos;
-    while (i < dotPos && std::isdigit(filepath[i])) {
-        ++i;
-    }
-    return std::stoi(filepath.substr(startPos, i - startPos));
-}
-
-bool customCompare(const std::string& a, const std::string& b) {
-    int numA = extractNumber(a);
-    int numB = extractNumber(b);
-    return numA < numB;
-}
-
-void Scan::previous_page() {
-    std::string page_path = folder + "/" + std::to_string(chapitre) + "/" + std::to_string(page - 1) + ".jpg";
-    if (std::ifstream(page_path)) {
-        page--;
-    } else {
-        std::vector<std::string> file_name_v = std::vector<std::string>();
-        if (chapitre == 1) {
-            return;
-        }
-        for (const auto & entry : std::filesystem::directory_iterator(folder + "/" + std::to_string(chapitre - 1))) {
-            file_name_v.push_back(entry.path());
-        }
-        std::sort(file_name_v.begin(), file_name_v.end(), customCompare);
-        std::string file_name = file_name_v[file_name_v.size() - 1];
-        if (std::ifstream(file_name)) {
-            chapitre--;
-            page = extractNumber(file_name);
-        }
-    }
-    this->set_page(this->get_page());
-}
-
-std::string Scan::get_page() {
-    return folder + "/" + std::to_string(chapitre) + "/" + std::to_string(page) + ".jpg";
-}
-
-int Scan::get_chapitre() {
-    return chapitre;
-}
-
-int Scan::get_page_number() {
-    return page;
-}
-
-int Scan::get_max_chapter() {
-    if (folder == "") {
-        return 0;
-    }
-    int max_chapitre = 0;
-    for (const auto & entry : std::filesystem::directory_iterator(folder)) {
-        if (entry.is_directory()) {
-            max_chapitre++;
-        }
-    }
-    return max_chapitre;
-}
-
-int Scan::get_max_page() {
-    if (folder == "") {
-        return 0;
-    }
-    int max_page = 0;
-    for (const auto & entry : std::filesystem::directory_iterator(folder + "/" + std::to_string(chapitre))) {
-        if (entry.is_regular_file()) {
-            max_page++;
-        }
-    }
-    return max_page;
-}
-
-void Scan::set_page(std::string page_path) {
-    Glib::RefPtr<Gdk::Pixbuf> original_pixbuf = Gdk::Pixbuf::create_from_file(page_path);
-    int w = original_pixbuf->get_width();
-    int h = original_pixbuf->get_height();
-    if (w > this->width) {
-        h = h * this->width / w;
-        w = this->width;
-    } else if (h > this->height) {
-        w = w * this->height / h;
-        h = this->height;
-    }
-    Glib::RefPtr<Gdk::Pixbuf> resized_pixbuf = original_pixbuf->scale_simple(w, h, Gdk::INTERP_BILINEAR);
-    this->set(resized_pixbuf);
 }
 
 void Scan::zoom_in() {
-    this->set_width(this->width * 1.1);
-    this->set_height(this->height * 1.1);
-    this->set_page(this->get_page());
+    width_ = std::max(1, static_cast<int>(std::lround(width_ * 1.1)));
+    height_ = std::max(1, static_cast<int>(std::lround(height_ * 1.1)));
+    display_current_page();
 }
 
 void Scan::zoom_out() {
-    this->set_width(this->width * 0.9);
-    this->set_height(this->height * 0.9);
-    this->set_page(this->get_page());
+    width_ = std::max(1, static_cast<int>(std::lround(width_ * 0.9)));
+    height_ = std::max(1, static_cast<int>(std::lround(height_ * 0.9)));
+    display_current_page();
 }
 
-void Scan::set_page(std::string folder, int chapitre, int page_number) {
-    this->folder = folder;
-    this->chapitre = chapitre;
-    this->page = page_number;
-    this->set_page(this->get_page());
+int Scan::get_chapitre() const {
+    return session_.progress().chapter;
+}
+
+int Scan::get_page_number() const {
+    return session_.progress().page;
+}
+
+ScanProgress Scan::get_progress() const {
+    return session_.progress();
+}
+
+int Scan::get_max_chapter() const {
+    return session_.max_chapter();
+}
+
+int Scan::get_max_page() const {
+    return session_.max_page_in_current_chapter();
 }
 
 void Scan::set_width(int width) {
-    this->width = width;
+    width_ = std::max(1, width);
 }
 
 void Scan::set_height(int height) {
-    this->height = height;
+    height_ = std::max(1, height);
+}
+
+/**
+ * @brief Rafraîchit l'image affichée à partir de la session courante.
+ *
+ * @return true si une page a pu être chargée, false si la session ne résout aucune image.
+ */
+bool Scan::display_current_page() {
+    const auto page = session_.current_page();
+    if (!page) {
+        clear();
+        return false;
+    }
+    return set_page(page->path);
 }

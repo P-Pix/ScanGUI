@@ -1,44 +1,56 @@
+/**
+ * @file Scan_Select.cpp
+ * @brief Implémente la sélection d'un scan local existant.
+ *
+ * La boîte de dialogue liste les dossiers de `./scan` et renvoie le choix utilisateur à la
+ * fenêtre principale.
+ */
+
 #include "Scan_Select.hpp"
 
-Scan_Select::Scan_Select()
-    : button_validate("Valider") {
-    set_title("Sélectionnez un dossier");
-    set_default_size(300, 100);
+#include <algorithm>
+#include <vector>
 
-    // Charger les dossiers dans la liste déroulante
-    for (const auto& entry : fs::directory_iterator("scan")) {
-        if (entry.is_directory()) {
-            combo_folders.append(entry.path().filename().string());
+Scan_Select::Scan_Select(Gtk::Window& parent)
+    : Gtk::Dialog("Selectionner une lecture", parent, true) {
+    set_default_size(360, 120);
+    add_button("Annuler", Gtk::RESPONSE_CANCEL);
+    add_button("Ouvrir", Gtk::RESPONSE_OK);
+
+    auto* content = get_content_area();
+    content->set_spacing(8);
+    content->set_margin_top(12);
+    content->set_margin_bottom(12);
+    content->set_margin_start(12);
+    content->set_margin_end(12);
+
+    auto* label = Gtk::make_managed<Gtk::Label>("Choisir un dossier dans ./scan :");
+    label->set_halign(Gtk::ALIGN_START);
+    content->pack_start(*label, Gtk::PACK_SHRINK);
+
+    std::vector<std::string> folders;
+    if (std::filesystem::exists("scan") && std::filesystem::is_directory("scan")) {
+        for (const auto& entry : std::filesystem::directory_iterator("scan")) {
+            if (entry.is_directory()) {
+                folders.push_back(entry.path().filename().string());
+            }
         }
     }
+    std::sort(folders.begin(), folders.end());
 
-    combo_folders.signal_changed().connect(sigc::mem_fun(*this, &Scan_Select::on_folder_selected));
-    button_validate.signal_clicked().connect(sigc::mem_fun(*this, &Scan_Select::on_button_clicked));
+    for (const auto& folder : folders) {
+        combo_folders_.append(folder);
+    }
+    if (!folders.empty()) {
+        combo_folders_.set_active(0);
+    }
 
-    // Layout
-    Gtk::Box *vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 5);
-    vbox->set_margin_top(10);
-    vbox->set_margin_bottom(10);
-    vbox->set_margin_start(10);
-    vbox->set_margin_end(10);
-
-    vbox->pack_start(combo_folders);
-    vbox->pack_start(button_validate, Gtk::PACK_SHRINK);
-
-    add(*vbox);
+    content->pack_start(combo_folders_, Gtk::PACK_SHRINK);
     show_all_children();
 }
 
-Scan_Select::~Scan_Select() {
-}
+Scan_Select::~Scan_Select() = default;
 
-void Scan_Select::on_folder_selected() {
-    selected_folder = combo_folders.get_active_text();
-}
-
-void Scan_Select::on_button_clicked() {
-    if (!selected_folder.empty()) {
-        std::cout << "Dossier sélectionné : " << selected_folder << std::endl;
-        hide(); // Ferme la fenêtre après validation
-    }
+std::string Scan_Select::get_selected_folder() const {
+    return combo_folders_.get_active_text();
 }

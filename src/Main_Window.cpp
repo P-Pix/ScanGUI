@@ -1,66 +1,155 @@
+/**
+ * @file Main_Window.cpp
+ * @brief Implémente l'écran principal GTK du lecteur.
+ *
+ * Cette fenêtre coordonne les widgets, les callbacks utilisateur, la navigation de lecture,
+ * la sauvegarde de progression et les actions de mise à jour de scans.
+ */
+
 #include "Main_Window.hpp"
 
-Main_Window::Main_Window() : 
-        m_VBox(Gtk::ORIENTATION_VERTICAL),
-        m_MenuBar(),
-        m_File("File"),
-        m_FileMenu(),
-        m_FileOpen("Open"),
-        m_FileSave("Save"),
-        m_FileQuit("Quit"),
-        m_Download("Download"),
-        m_DownloadMenu(),
-        m_UpdateScan("Update"),
-        m_NewScan("New"),
-        m_Scan(), 
-        m_EventBox(),
-        m_ScrollListeManga(),
-        m_ListButtonManga(),
-        m_Grid(),
-        m_GridListeManga(), 
-        m_ScrollImage(),
-        m_go_to(),
-        m_Entry_page(),
-        m_Entry_chapter(),
-        m_Button_go_to(),
-        m_GridImage_go_to(),
-        m_UpdateAllScan("Update all") {
-    set_title("Scan Manager");
-    set_default_size(this->WIDTH_WINDOW, this->HEIGHT_WINDOW);
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <iostream>
+#include <optional>
+#include <stdexcept>
+
+namespace {
+
+/**
+ * @brief Convertit un nom de dossier de scan en libellé lisible pour la liste GTK.
+ *
+ * Objectif projet :
+ * Rendre la bibliothèque plus agréable sans modifier les identifiants de dossiers utilisés
+ * par le stockage local.
+ */
+std::string readable_scan_name(std::string name) {
+    if (name.empty()) {
+        return "Sans nom";
+    }
+
+    std::replace(name.begin(), name.end(), '-', ' ');
+    bool upperNext = true;
+    for (char& c : name) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            upperNext = true;
+            continue;
+        }
+        if (upperNext) {
+            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+            upperNext = false;
+        }
+    }
+
+    constexpr std::size_t lineLength = 18;
+    for (std::size_t pos = lineLength; pos < name.size(); pos += lineLength) {
+        const auto split = name.rfind(' ', pos);
+        if (split != std::string::npos && name[split] == ' ') {
+            name[split] = '\n';
+        }
+    }
+    return name;
+}
+
+/**
+ * @brief Valide une saisie utilisateur attendue comme entier positif.
+ *
+ * Objectif projet :
+ * Éviter qu'un champ page ou chapitre invalide provoque une exception lors de la navigation
+ * directe.
+ */
+std::optional<int> parse_positive_int(const Glib::ustring& value) {
+    const std::string text = value.raw();
+    if (text.empty()) {
+        return std::nullopt;
+    }
+    if (!std::all_of(text.begin(), text.end(), [](unsigned char c) { return std::isdigit(c); })) {
+        return std::nullopt;
+    }
+    try {
+        int parsed = std::stoi(text);
+        if (parsed < 1) {
+            return std::nullopt;
+        }
+        return parsed;
+    } catch (...) {
+        return std::nullopt;
+    }
+}
+
+/**
+ * @brief Liste les dossiers de scans disponibles pour l'interface.
+ *
+ * La création automatique de `scan` permet au logiciel de démarrer proprement même sur une
+ * première installation sans bibliothèque existante.
+ */
+std::vector<std::string> scan_folders() {
+    std::vector<std::string> folders;
+    if (!std::filesystem::exists("scan")) {
+        std::filesystem::create_directories("scan");
+    }
+    for (const auto& entry : std::filesystem::directory_iterator("scan")) {
+        if (entry.is_directory()) {
+            folders.push_back(entry.path().filename().string());
+        }
+    }
+    std::sort(folders.begin(), folders.end());
+    return folders;
+}
+
+} // namespace
+
+Main_Window::Main_Window()
+    : m_VBox(Gtk::ORIENTATION_VERTICAL),
+      m_File("File"),
+      m_FileOpen("Open"),
+      m_FileSave("Save"),
+      m_FileQuit("Quit"),
+      m_Download("Download"),
+      m_UpdateScan("Update"),
+      m_UpdateAllScan("Update all"),
+      m_NewScan("New") {
+    std::filesystem::create_directories("scan");
+
+    set_title("ScanGUI - Offline Reader");
+    set_default_size(WIDTH_WINDOW, HEIGHT_WINDOW);
     set_position(Gtk::WIN_POS_CENTER);
 
     add_events(Gdk::KEY_PRESS_MASK);
     signal_key_press_event().connect(sigc::mem_fun(*this, &Main_Window::on_key_press));
 
-    this->m_Scan.set_width(this->WIDTH);
-    this->m_Scan.set_height(this->HEIGHT);
+    m_Scan.set_width(WIDTH);
+    m_Scan.set_height(HEIGHT);
 
-    this->m_EventBox.add(this->m_Scan);
-    this->m_EventBox.signal_button_press_event().connect(sigc::mem_fun(*this, &Main_Window::on_image_clic));
-    this->m_ScrollImage.add(this->m_EventBox);
+    m_EventBox.add(m_Scan);
+    m_EventBox.signal_button_press_event().connect(sigc::mem_fun(*this, &Main_Window::on_image_clic));
+    m_EventBox.set_hexpand(true);
+    m_EventBox.set_vexpand(true);
 
-    // this->m_Entry_page set text in background
-    this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-    this->m_go_to.attach(this->m_Entry_page, 0, 0, 1, 1);
-    this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
-    this->m_go_to.attach(this->m_Entry_chapter, 1, 0, 1, 1);
-    this->m_go_to.attach(this->m_Button_go_to, 2, 0, 1, 1);
-    this->m_Button_go_to.set_label("Go to");
-    this->m_Button_go_to.signal_clicked().connect(sigc::mem_fun(*this, &Main_Window::go_to));
-    this->m_go_to.set_column_homogeneous(true);
+    m_ScrollImage.add(m_EventBox);
+    m_ScrollImage.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
-    this->m_GridImage_go_to.attach(this->m_go_to, 0, 1, 1, 1);
-    this->m_GridImage_go_to.attach(this->m_ScrollImage, 0, 0, 1, 1);
+    m_Entry_page.set_placeholder_text("Page");
+    m_Entry_chapter.set_placeholder_text("Chapitre");
+    m_Button_go_to.set_label("Go to");
+    m_Button_go_to.signal_clicked().connect(sigc::mem_fun(*this, &Main_Window::go_to));
 
-    this->liste_manga();
+    m_go_to.attach(m_Entry_page, 0, 0, 1, 1);
+    m_go_to.attach(m_Entry_chapter, 1, 0, 1, 1);
+    m_go_to.attach(m_Button_go_to, 2, 0, 1, 1);
+    m_go_to.set_column_homogeneous(true);
 
-    // faire une colone de petite taille pour box manga et mettre le reste pour eventbox
-    this->m_Grid.attach(this->m_ScrollListeManga, 0, 0, 1, 1);
-    this->m_Grid.attach(this->m_GridImage_go_to, 1, 0, 1, 1);
-    this->m_Grid.set_column_homogeneous(false);
+    m_GridImage_go_to.attach(m_ScrollImage, 0, 0, 1, 1);
+    m_GridImage_go_to.attach(m_go_to, 0, 1, 1, 1);
 
-    this->m_EventBox.set_hexpand(true);
-    this->m_EventBox.set_vexpand(true);
+    refresh_scan_list();
+
+    m_Grid.attach(m_ScrollListeManga, 0, 0, 1, 1);
+    m_Grid.attach(m_GridImage_go_to, 1, 0, 1, 1);
+    m_Grid.set_column_homogeneous(false);
+    m_GridImage_go_to.set_hexpand(true);
+    m_GridImage_go_to.set_vexpand(true);
 
     m_MenuBar.append(m_File);
     m_FileMenu.append(m_FileOpen);
@@ -82,174 +171,143 @@ Main_Window::Main_Window() :
 
     m_VBox.pack_start(m_MenuBar, Gtk::PACK_SHRINK);
     m_VBox.pack_start(m_Grid, Gtk::PACK_EXPAND_WIDGET);
-    
     add(m_VBox);
+
+    refresh_progress_placeholders();
     show_all_children();
 }
 
-Main_Window::~Main_Window() {
-    for (auto button : m_ListButtonManga) {
-        delete button;
-    }
-    std::cout << "Main_Window deleted" << std::endl;
-}
+Main_Window::~Main_Window() = default;
 
-void Main_Window::go_to(void) {
-    int page = 0;
-    std::string page_text = this->m_Entry_page.get_text();
-    if (page_text.empty()) {
-        page = this->m_Scan.get_page_number();
-    } else {
-        page = std::stoi(page_text);
+/**
+ * @brief Reconstruit la liste latérale des lectures disponibles.
+ *
+ * Objectif projet :
+ * Synchroniser l'interface avec le contenu courant du dossier `scan`, notamment après la
+ * création ou la mise à jour d'une lecture.
+ */
+void Main_Window::refresh_scan_list() {
+    for (auto* button : m_ListButtonManga) {
+        m_GridListeManga.remove(*button);
     }
-    int chapter = 0;
-    std::string chapter_text = this->m_Entry_chapter.get_text();
-    if (chapter_text.empty()) {
-        chapter = this->m_Scan.get_chapitre();
-    } else {
-        chapter = std::stoi(chapter_text);
-    }
-    std::cout << "Go to: " << chapter << " " << page << std::endl;
-    if (page < 1) {
-        page = 1;
-    }
-    if (chapter < 1) {
-        chapter = 1;
-    }
-    this->m_Scan.set_page(this->selected_folder, chapter, page);
-}
+    m_ListButtonManga.clear();
 
-void Main_Window::liste_manga() {
-    std::filesystem::directory_iterator("./scan");
-    // trier les dossiers par ordre alphabétique
-    std::vector<std::string> folders;
-    for (const auto& entry : std::filesystem::directory_iterator("./scan")) {
-        if (entry.is_directory()) {
-            folders.push_back(entry.path().filename().string());
-        }
-    }
-    std::sort(folders.begin(), folders.end());
-    for (std::string entry : folders) {
-        std::string name = entry;
-        // si le nom est trop long on le met sur plusieurs ligne
-        if (name.size() > 15) {
-            // trouver le dernier " " avant pour tous les 15 caractères
-            for (size_t i = 15; i < name.size(); i += 15) {
-                size_t pos = name.rfind("-", i);
-                if (pos != std::string::npos) {
-                    name[pos] = '\n';
-                }
-            }
-        }
-        // transformer les "-"" en espace et mettre la première lettre de chaque mot en majuscule
-        name[0] = std::toupper(name[0]);
-        for (size_t i = 0; i < name.size(); i++) {
-            if (name[i] == '-') {
-                name[i] = ' ';
-                name[i + 1] = std::toupper(name[i + 1]);
-            } else if (name[i - 1] == '\n') {
-                name[i] = std::toupper(name[i]);
-            }
-        }
-        Gtk::Button* button = Gtk::manage(new Gtk::Button(name.c_str()));
-        button->signal_clicked().connect([this, entry]() {
-            this->selected_folder = "./scan/" + entry;
-            this->open_Scan(this->selected_folder);
+    int row = 0;
+    for (const auto& folder : scan_folders()) {
+        auto* button = Gtk::make_managed<Gtk::Button>(readable_scan_name(folder));
+        button->set_hexpand(true);
+        button->signal_clicked().connect([this, folder]() {
+            open_scan(std::filesystem::path("scan") / folder);
         });
-        this->m_ListButtonManga.push_back(button);
-        this->m_GridListeManga.attach(*button, 0, this->m_ListButtonManga.size(), 1, 1);
+        m_ListButtonManga.push_back(button);
+        m_GridListeManga.attach(*button, 0, row++, 1, 1);
     }
-    this->m_ScrollListeManga.set_size_request(150, this->HEIGHT);
-    this->m_ScrollListeManga.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-    this->m_ScrollListeManga.add(this->m_GridListeManga);
+
+    m_ScrollListeManga.set_size_request(180, HEIGHT);
+    m_ScrollListeManga.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    if (m_ScrollListeManga.get_child() == nullptr) {
+        m_ScrollListeManga.add(m_GridListeManga);
+    }
+    m_GridListeManga.show_all();
+}
+
+/**
+ * @brief Ouvre directement le chapitre et la page saisis par l'utilisateur.
+ *
+ * Objectif projet :
+ * Fournir un accès rapide à une position précise tout en sauvegardant la progression si la
+ * page existe réellement.
+ */
+void Main_Window::go_to() {
+    if (selected_folder_.empty()) {
+        show_error("Aucune lecture ouverte", "Ouvre d'abord une lecture avant d'aller a une page precise.");
+        return;
+    }
+
+    const int page = parse_positive_int(m_Entry_page.get_text()).value_or(m_Scan.get_page_number());
+    const int chapter = parse_positive_int(m_Entry_chapter.get_text()).value_or(m_Scan.get_chapitre());
+
+    if (!m_Scan.set_page(selected_folder_.string(), chapter, page)) {
+        show_error("Page introuvable", "Impossible d'ouvrir le chapitre " + std::to_string(chapter) + ", page " + std::to_string(page) + ".");
+        return;
+    }
+
+    save_current_progress();
+    refresh_progress_placeholders();
 }
 
 void Main_Window::update_all_scan() {
-    std::filesystem::directory_iterator("./scan");
-    // trier les dossiers par ordre alphabétique
-    std::vector<std::string> folders;
-    for (const auto& entry : std::filesystem::directory_iterator("./scan")) {
-        if (entry.is_directory()) {
-            folders.push_back(entry.path().filename().string());
+    try {
+        for (const auto& folder : scan_folders()) {
+            update_scan(std::filesystem::path("scan") / folder);
         }
-    }
-    std::sort(folders.begin(), folders.end());
-    for (std::string entry : folders) {
-        std::string folder = "./scan/" + entry;
-        this->update_scan(folder);
+        refresh_scan_list();
+    } catch (const std::exception& error) {
+        show_error("Mise a jour impossible", error.what());
     }
 }
 
 bool Main_Window::on_key_press(GdkEventKey* event) {
     if (event->state & GDK_CONTROL_MASK) {
         if (event->keyval == GDK_KEY_o) {
-            this->on_menu_file_open();
+            on_menu_file_open();
         } else if (event->keyval == GDK_KEY_s) {
-            this->on_menu_file_save();
+            on_menu_file_save();
         } else if (event->keyval == GDK_KEY_q) {
-            this->on_menu_file_quit();
+            on_menu_file_quit();
         } else if (event->keyval == GDK_KEY_d) {
-            this->on_menu_download_update();
+            on_menu_download_update();
         } else if (event->keyval == GDK_KEY_n) {
-            this->on_menu_download_new();
+            on_menu_download_new();
         }
+        return true;
     }
+
     if (event->keyval == GDK_KEY_Right) {
-        m_Scan.next_page();
-        this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+        navigate_next();
     } else if (event->keyval == GDK_KEY_Left) {
-        m_Scan.previous_page();
-        this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+        navigate_previous();
     } else if (event->keyval == GDK_KEY_plus || event->keyval == GDK_KEY_KP_Add) {
         m_Scan.zoom_in();
     } else if (event->keyval == GDK_KEY_minus || event->keyval == GDK_KEY_KP_Subtract) {
         m_Scan.zoom_out();
     }
     return true;
-
 }
 
 void Main_Window::on_menu_file_open() {
-    Scan_Select scan_select;
-    scan_select.show();
-    while (scan_select.is_visible()) {
-        Glib::MainContext::get_default()->iteration(true);
-    }
-    selected_folder = "./scan/" + scan_select.get_selected_folder();
-    this->open_Scan(selected_folder);
-}
-
-void Main_Window::open_Scan(std::string folder) {
-    std::cout << "Open scan: " << folder << std::endl;
-    std::string save_file = selected_folder + "/data.json";
-    std::cout << "Save file: " << save_file << std::endl;
-    std::ifstream file(save_file, std::ifstream::binary); // json file
-    if (!file.is_open()) {
-        m_Scan.set_page(selected_folder, 1, 1);
+    Scan_Select scan_select(*this);
+    if (scan_select.run() != Gtk::RESPONSE_OK) {
         return;
     }
-    Json::Value json;
-    file >> json;
-    int page = json["save"]["page"].asInt();
-    int chapitre = json["save"]["chapter"].asInt();
-    m_Scan.set_page(selected_folder, chapitre, page);
-    this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-    this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
+
+    const auto folder = scan_select.get_selected_folder();
+    if (folder.empty()) {
+        return;
+    }
+    open_scan(std::filesystem::path("scan") / folder);
+}
+
+void Main_Window::open_scan(const std::filesystem::path& folder) {
+    selected_folder_ = folder;
+
+    ScanProgress progress{1, 1};
+    try {
+        if (auto metadata = repository_.load(folder)) {
+            progress = metadata->saveProgress;
+        }
+    } catch (const std::exception& error) {
+        show_error("Sauvegarde illisible", error.what());
+    }
+
+    if (!m_Scan.set_page(folder.string(), progress.chapter, progress.page)) {
+        m_Scan.set_page(folder.string(), 1, 1);
+    }
+    refresh_progress_placeholders();
 }
 
 void Main_Window::on_menu_file_save() {
-    std::string save_file = selected_folder + "/data.json";
-    std::ifstream file(selected_folder + "/data.json", std::ifstream::binary); // json file
-    Json::Value json;
-    file >> json;
-    json["save"]["chapter"] = m_Scan.get_chapitre();
-    json["save"]["page"] = m_Scan.get_page_number();
-    file.close();
-    std::ofstream save(save_file, std::ofstream::binary);
-    save << json;
-    save.close();
+    save_current_progress();
 }
 
 void Main_Window::on_menu_file_quit() {
@@ -257,107 +315,117 @@ void Main_Window::on_menu_file_quit() {
 }
 
 bool Main_Window::on_image_clic(GdkEventButton* event) {
-    if (event->type == GDK_BUTTON_PRESS) {
-        this->m_Scan.set_width(this->WIDTH);
-        this->m_Scan.set_height(this->HEIGHT);
-        if (event->button == 1) {
-            m_Scan.next_page();
-        } else if (event->button == 3) {
-            m_Scan.previous_page();
-        }
-        std::ifstream file(selected_folder + "/data.json", std::ifstream::binary); // json file
-        Json::Value json;
-        file >> json;
-        json["save"]["chapter"] = m_Scan.get_chapitre();
-        json["save"]["page"] = m_Scan.get_page_number();
-        file.close();
-        std::ofstream save(selected_folder + "/data.json", std::ofstream::binary);
-        save << json;
-        save.close();
-        this->m_Entry_page.set_placeholder_text("Page, actuelle : " + std::to_string(this->m_Scan.get_page_number()) + " / " + std::to_string(this->m_Scan.get_max_page()));
-        this->m_Entry_chapter.set_placeholder_text("Chapitre, actuel : " + std::to_string(this->m_Scan.get_chapitre()) + " / " + std::to_string(this->m_Scan.get_max_chapter()));
-        return true;
+    if (event->type != GDK_BUTTON_PRESS) {
+        return false;
     }
-    return false;
+
+    m_Scan.set_width(WIDTH);
+    m_Scan.set_height(HEIGHT);
+    if (event->button == 1) {
+        navigate_next();
+    } else if (event->button == 3) {
+        navigate_previous();
+    }
+    return true;
 }
 
 void Main_Window::on_menu_download_update() {
-    Scan_Select scan_select;
-    scan_select.show();
-    while (scan_select.is_visible()) {
-        Glib::MainContext::get_default()->iteration(true);
+    Scan_Select scan_select(*this);
+    if (scan_select.run() != Gtk::RESPONSE_OK) {
+        return;
     }
-    std::string folder = "./scan/" + scan_select.get_selected_folder();
-    this->update_scan(folder);
+
+    const auto folder = scan_select.get_selected_folder();
+    if (!folder.empty()) {
+        update_scan(std::filesystem::path("scan") / folder);
+    }
 }
 
 void Main_Window::on_menu_download_new() {
-    New_Download_Window new_download_window;
-    new_download_window.show();
-    while (new_download_window.is_visible()) {
-        Glib::MainContext::get_default()->iteration(true);
+    New_Download_Window new_download_window(*this);
+    if (new_download_window.run() != Gtk::RESPONSE_OK) {
+        return;
     }
-    this->update_scan(new_download_window.get_folder());
+
+    if (!new_download_window.create_scan_from_url(new_download_window.get_website())) {
+        show_error("URL invalide", "Format attendu : https://lelscans.net/scan-nom-du-scan/1/1");
+        return;
+    }
+
+    refresh_scan_list();
+    update_scan(new_download_window.get_folder());
 }
 
-void Main_Window::update_scan(std::string folder) {
-    std::string data = folder + "/data.json";
-    std::ifstream file(data, std::ifstream::binary); // json file
-    file >> this->m_current_scan;
-    file.close();
-
-    Download_Scan download_scan;
-    std::string url = this->m_current_scan["download"]["url"].asString() + this->m_current_scan["download"]["chapter"].asString() + "/" + this->m_current_scan["download"]["page"].asString();
-
-    do {
-        std::cout << "URL: " << url << std::endl;
-
-        // télécharge l'image courante
-        std::string folder_current = folder + "/" + this->m_current_scan["download"]["chapter"].asString();
-        download_scan.download_picture_page(url, folder_current + "/" + this->m_current_scan["download"]["page"].asString() + ".jpg");
-
-        // récupère l'url de la page suivante
-        std::string next_page = download_scan.get_next_page_url(url);
-        std::cout << "Next page: " << next_page << std::endl;
-
-        // test si on a un nouveau chapitre ou non
-        url = this->new_chapter(folder, next_page);
-    } while (url != "");
-
-    std::cout << "Download End" << std::endl;
-
-    std::ofstream save(data, std::ofstream::binary);
-    save << this->m_current_scan;
-    save.close();
+void Main_Window::update_scan(const std::filesystem::path& folder) {
+    try {
+        ScanUpdater updater(repository_, httpClient_, provider_);
+        const auto report = updater.update(folder);
+        show_info(
+            "Mise a jour terminee",
+            "Pages telechargees : " + std::to_string(report.downloadedPages) +
+            "\nPages deja presentes : " + std::to_string(report.skippedExistingPages) +
+            "\n" + report.message
+        );
+    } catch (const std::exception& error) {
+        show_error("Mise a jour impossible", error.what());
+    }
 }
 
-std::string Main_Window::new_chapter(std::string folder, std::string url) {
-    if (url == "/1" || url == "#main_hot" || url == "") {
-        return "";
+void Main_Window::navigate_next() {
+    if (selected_folder_.empty()) {
+        return;
     }
+    m_Scan.next_page();
+    save_current_progress();
+    refresh_progress_placeholders();
+}
 
-    std::string chap = url;
-    std::string cut = chap.replace(0, this->m_current_scan["download"]["url"].asString().size() + 1, "");
-
-    if (cut != this->m_current_scan["download"]["chapter"].asString() &&
-        cut.find("/") == std::string::npos) {
-        url = url + "/1";
-
-        if (url == "/1" || url == "#main_hot") {
-            return "";
-        }
-
-        this->m_current_scan["download"]["page"] = 1;
-        this->m_current_scan["download"]["chapter"] = this->m_current_scan["download"]["chapter"].asInt() + 1;
-
-        std::filesystem::create_directory(folder + "/" + this->m_current_scan["download"]["chapter"].asString());
-        
-    } else {
-        this->m_current_scan["download"]["page"] = this->m_current_scan["download"]["page"].asInt() + 1;
+void Main_Window::navigate_previous() {
+    if (selected_folder_.empty()) {
+        return;
     }
+    m_Scan.previous_page();
+    save_current_progress();
+    refresh_progress_placeholders();
+}
 
-    std::ofstream save(folder + "/data.json", std::ofstream::binary);
-    save << this->m_current_scan;
-    save.close();
-    return url;
+/**
+ * @brief Sauvegarde la position courante de la lecture ouverte.
+ *
+ * Objectif projet :
+ * Permettre la reprise automatique à la prochaine ouverture du même scan sans action
+ * supplémentaire de l'utilisateur.
+ */
+void Main_Window::save_current_progress() {
+    if (selected_folder_.empty()) {
+        return;
+    }
+    try {
+        repository_.save_progress(selected_folder_, m_Scan.get_progress());
+    } catch (const std::exception& error) {
+        show_error("Sauvegarde impossible", error.what());
+    }
+}
+
+void Main_Window::refresh_progress_placeholders() {
+    m_Entry_page.set_placeholder_text(
+        "Page actuelle : " + std::to_string(m_Scan.get_page_number()) +
+        " / " + std::to_string(m_Scan.get_max_page())
+    );
+    m_Entry_chapter.set_placeholder_text(
+        "Chapitre actuel : " + std::to_string(m_Scan.get_chapitre()) +
+        " / " + std::to_string(m_Scan.get_max_chapter())
+    );
+}
+
+void Main_Window::show_error(const std::string& title, const std::string& message) {
+    Gtk::MessageDialog dialog(*this, title, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+    dialog.set_secondary_text(message);
+    dialog.run();
+}
+
+void Main_Window::show_info(const std::string& title, const std::string& message) {
+    Gtk::MessageDialog dialog(*this, title, false, Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK, true);
+    dialog.set_secondary_text(message);
+    dialog.run();
 }

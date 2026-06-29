@@ -1,38 +1,28 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Build artifacts
+build/
+build-cmake/
+bin/
+lib/
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+*.d
 *.a
-*.lib
-
-# Executables
+*.so
+*.dll
+*.dylib
 *.exe
 *.out
 *.app
-bin
-lib
-scan
+
+# Generated documentation
 Doxyfile
-html
-latex
+html/
+latex/
+
+# Local data
+scan/
+*.part
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp

@@ -1,90 +1,66 @@
+/**
+ * @file Scan.hpp
+ * @brief Déclare le widget GTK chargé d'afficher et de naviguer dans une session de scan.
+ *
+ * Le widget conserve l'interface attendue par l'ancienne fenêtre principale tout en délégant
+ * la navigation entre pages et chapitres au moteur métier `ScanSession`.
+ */
+
 #ifndef SCAN_HPP
 #define SCAN_HPP
 
-#include <string>
-#include <fstream>
+#include "domain/ScanProgress.hpp"
+#include "domain/ScanSession.hpp"
+
 #include <gtkmm.h>
-#include <iostream>
+
 #include <filesystem>
-#include <vector>
+#include <string>
 
 /**
- * @brief La class Scan est une class hérité de Gtk::Image.
- * @brief Elle sert a représenter la page actuelle du scan
+ * @brief Widget d'image spécialisé pour l'affichage d'une session de scan.
+ *
+ * Objectif projet :
+ * Conserver une intégration simple avec GTK tout en déléguant la navigation réelle à
+ * `ScanSession`, ce qui réduit le couplage entre rendu graphique et logique métier.
  */
 class Scan : public Gtk::Image {
 public:
-
-    /**
-     * @brief Création d'un Scan vide
-     * @return Scan("", 1, 1, 0, 0)
-     */
     Scan();
-
-    /**
-     * @brief Création d'un Scan avec la taille de la fenetre
-     * @param width largeur de l'image
-     * @param height hauteur de l'image
-     * @return Scan("", 1, 1, width, height)
-     */
     Scan(int width, int height);
-
-    /**
-     * @brief Création d'un Scan avec la taille de la fenetre et le nom du manga selectionné
-     * @param folder nom du manga selectionné
-     * @param width largeur de l'image
-     * @param height hauteur de l'image
-     * @return Scan(folder, 1, 1, width, height)
-     */
     Scan(std::string folder, int width, int height);
-
-    /**
-     * @brief Création d'un Scan avec la taille de la fenetre et le nom du manga selectionné ainsi qui le chapitre et la page voulu
-     * @param folder nom du manga selectionné
-     * @param page page selectionné
-     * @param chapitre chapitre selectionné
-     * @param width largeur de l'image
-     * @param height hauteur de l'image
-     * @return Scan(folder, 1, 1, width, height)
-     */
     Scan(std::string folder, int page, int chapitre, int width, int height);
-
-    /**
-     * @brief Destructeur de base de GTK::Image aucun ajout de ma part
-     */
     virtual ~Scan();
 
-    void set_folder(std::string folder);
-    std::string get_folder();
+    void set_folder(const std::string& folder);
+    [[nodiscard]] std::string get_folder() const;
 
-    void next_page();
-    void previous_page();
+    [[nodiscard]] bool next_page();
+    [[nodiscard]] bool previous_page();
 
-    std::string get_page();
-    void set_page(std::string folder, int chapitre, int page_number);
-    void set_page(std::string page_path);
+    [[nodiscard]] std::string get_page() const;
+    [[nodiscard]] bool set_page(const std::string& folder, int chapitre, int page_number);
+    [[nodiscard]] bool set_page(const std::filesystem::path& page_path);
 
     void zoom_in();
     void zoom_out();
 
-    int get_chapitre();
-    int get_page_number();
+    [[nodiscard]] int get_chapitre() const;
+    [[nodiscard]] int get_page_number() const;
+    [[nodiscard]] ScanProgress get_progress() const;
 
-    int get_max_chapter();
-    int get_max_page();
+    [[nodiscard]] int get_max_chapter() const;
+    [[nodiscard]] int get_max_page() const;
 
     void set_width(int width);
     void set_height(int height);
 
-protected:
-
 private:
-    std::string folder;
-    int page;
-    int chapitre;
+    ScanSession session_;
+    int width_{0};
+    int height_{0};
 
-    int width;
-    int height;
+    [[nodiscard]] bool display_current_page();
 };
 
-#endif // !SCAN_HPP
+#endif

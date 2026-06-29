@@ -1,44 +1,47 @@
+/**
+ * @file Download_Scan.hpp
+ * @brief Déclare l'adaptateur historique de téléchargement de page de scan.
+ *
+ * Cette classe maintient l'API de l'ancien code tout en utilisant libcurl et le provider de
+ * parsing dédié au lieu d'appels shell externes.
+ */
+
 #ifndef DOWNLOAD_SCAN_HPP
 #define DOWNLOAD_SCAN_HPP
 
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <array>
+#include "infrastructure/CurlHttpClient.hpp"
+#include "infrastructure/LelScansProvider.hpp"
 
+#include <filesystem>
+#include <string>
+
+/**
+ * @brief Adaptateur historique de téléchargement d'une page de scan.
+ *
+ * Objectif projet :
+ * Préserver l'interface publique utilisée par l'ancien code tout en supprimant les appels
+ * shell et en centralisant les accès réseau dans `CurlHttpClient`.
+ */
 class Download_Scan {
 public:
     Download_Scan();
-    Download_Scan(std::string website);
+    explicit Download_Scan(std::string website);
     virtual ~Download_Scan();
 
     void set_website(std::string website);
-    std::string get_website();
-    std::string get_website_content(std::string site);
+    [[nodiscard]] std::string get_website() const;
+    [[nodiscard]] std::string get_website_content(const std::string& site) const;
 
-    std::string next_page();
-    std::string previous_page();
+    [[nodiscard]] std::string next_page();
+    [[nodiscard]] std::string previous_page();
 
-    void download_picture_page(std::string site, std::string file_name);
-
-    std::string get_next_page_url(std::string url);
-
-protected:
+    void download_picture_page(const std::string& site, const std::filesystem::path& file_name) const;
+    [[nodiscard]] std::string get_next_page_url(const std::string& url) const;
 
 private:
-    std::string website;
-    std::string folder;
-    int page;
-    int chapitre;
-
-    std::string url_next_page_lelscan(std::string url);
-    std::string download_picture_page_lelscan(std::string site);
-    size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s);
+    std::string website_;
+    CurlHttpClient httpClient_;
+    LelScansProvider lelScansProvider_;
 };
 
-#endif // !DOWNLOAD_SCAN_HPP
+#endif
