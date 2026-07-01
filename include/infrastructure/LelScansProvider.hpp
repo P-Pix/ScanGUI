@@ -24,16 +24,19 @@
  */
 class LelScansProvider {
 public:
+    /** @brief Résultat du décodage d'une URL de lecteur supportée. */
     struct ParsedUrl {
         std::string folderName;
         std::string baseUrl;
         ScanProgress progress{};
     };
 
+    /** @brief Indique si l'URL appartient à la source supportée par ce provider. */
     [[nodiscard]] bool supports(const std::string& url) const;
     [[nodiscard]] std::optional<ParsedUrl> parse_reader_url(const std::string& url) const;
     [[nodiscard]] std::string page_url(const ScanMetadata& metadata) const;
     [[nodiscard]] std::optional<ScanProgress> parse_next_progress(const std::string& baseUrl, const std::string& nextUrl) const;
+    /** @brief Extrait l'URL d'image principale depuis le HTML de la page. */
     [[nodiscard]] std::string extract_image_url(const std::string& html) const;
     [[nodiscard]] std::string extract_next_url(const std::string& html) const;
 

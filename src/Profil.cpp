@@ -1,3 +1,7 @@
+/**
+ * @file Profil.cpp
+ * @brief Implémente le modèle historique minimal de profil utilisateur.
+ */
 #include "../include/Profil.hpp"
 
 Profil::Profil() : name("") {

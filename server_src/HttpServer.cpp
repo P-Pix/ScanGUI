@@ -17,6 +17,9 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <cctype>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -102,6 +105,52 @@ void send_all(int socketFd, const std::string& data) {
         buffer += written;
         remaining -= static_cast<std::size_t>(written);
     }
+}
+
+/**
+ * @brief Diffuse un fichier en blocs après avoir sérialisé les en-têtes HTTP.
+ *
+ * Objectif projet :
+ * Servir les images sans charger tout le fichier en mémoire, tout en laissant le contrôleur
+ * valider au préalable que le chemin demandé est autorisé.
+ */
+void send_streamed_file(int socketFd, const HttpResponse& response) {
+    namespace fs = std::filesystem;
+    const fs::path filePath = response.streamFilePath;
+    std::error_code ec;
+    const auto size = fs::file_size(filePath, ec);
+    if (ec) {
+        send_all(socketFd, HttpResponse::not_found("Streamed file not found").serialize());
+        return;
+    }
+
+    send_all(socketFd, response.serialize_headers(static_cast<std::size_t>(size)));
+    std::ifstream input(filePath, std::ios::binary);
+    char chunk[64 * 1024];
+    while (input) {
+        input.read(chunk, sizeof(chunk));
+        const auto read = input.gcount();
+        if (read <= 0) {
+            break;
+        }
+        const char* cursor = chunk;
+        std::size_t remaining = static_cast<std::size_t>(read);
+        while (remaining > 0) {
+            const ssize_t written = ::send(socketFd, cursor, remaining, 0);
+            if (written <= 0) {
+                return;
+            }
+            cursor += written;
+            remaining -= static_cast<std::size_t>(written);
+        }
+    }
+}
+
+void log_request(const HttpRequest& request, const HttpResponse& response) {
+    std::cout << "{\"event\":\"http_request\",\"method\":\"" << json_escape(request.method)
+              << "\",\"path\":\"" << json_escape(request.path)
+              << "\",\"status\":" << response.status
+              << ",\"streamed\":" << (response.streamFile ? "true" : "false") << "}" << std::endl;
 }
 
 } // namespace
@@ -219,7 +268,12 @@ void HttpServer::handle_client(int clientSocket) const {
         } else {
             response = handler_(request);
         }
-        send_all(clientSocket, response.serialize());
+        log_request(request, response);
+        if (response.streamFile) {
+            send_streamed_file(clientSocket, response);
+        } else {
+            send_all(clientSocket, response.serialize());
+        }
     } catch (const std::exception& error) {
         send_all(clientSocket, HttpResponse::server_error(error.what()).serialize());
     }

@@ -69,6 +69,8 @@ int main() {
         const std::string host = env_or("SCANGUI_HOST", "127.0.0.1");
         const int port = env_int_or("SCANGUI_PORT", 8787);
         const bool syncOnStart = env_or("SCANGUI_SYNC_ON_START", "1") != "0";
+        const std::string adminToken = env_or("SCANGUI_ADMIN_TOKEN", "");
+        const std::filesystem::path webRoot = env_or("SCANGUI_WEB_ROOT", "web");
 
         PostgresScanDatabase database(databaseUrl);
         database.initialize_schema();
@@ -80,7 +82,7 @@ int main() {
                       << report.chapters << " chapter(s), " << report.pages << " page(s)" << std::endl;
         }
 
-        ScanApiController controller(scanRoot, database);
+        ScanApiController controller(scanRoot, database, host, adminToken, webRoot);
         HttpServer server(host, port, [&controller](const HttpRequest& request) {
             return controller.handle(request);
         });

@@ -15,6 +15,9 @@
 
 namespace {
 
+/**
+ * @brief Vérifie qu'un fichier porte une extension image supportée.
+ */
 bool is_image_extension(const std::filesystem::path& path) {
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
@@ -23,6 +26,11 @@ bool is_image_extension(const std::filesystem::path& path) {
     return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp";
 }
 
+/**
+ * @brief Parse un nom de chapitre ou de page numérique.
+ *
+ * Les dossiers ou fichiers annexes sont ignorés s'ils ne respectent pas le format attendu.
+ */
 std::optional<int> parse_positive_int(const std::string& value) {
     if (value.empty()) {
         return std::nullopt;
@@ -47,6 +55,9 @@ ScanSession::ScanSession(std::filesystem::path root, ScanProgress initial) {
     open(std::move(root), initial);
 }
 
+/**
+ * @brief Ouvre une racine de scan et normalise la progression initiale.
+ */
 void ScanSession::open(std::filesystem::path root, ScanProgress initial) {
     root_ = std::move(root);
     progress_ = initial;
@@ -146,6 +157,11 @@ std::optional<ScanPage> ScanSession::previous_page() {
     return current_page();
 }
 
+/**
+ * @brief Tente de déplacer la session vers une position explicite.
+ *
+ * La progression n'est modifiée que si la page demandée existe réellement.
+ */
 std::optional<ScanPage> ScanSession::go_to(ScanProgress requested) {
     requested.normalize();
     if (auto path = page_path(requested.chapter, requested.page)) {

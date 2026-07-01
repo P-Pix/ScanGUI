@@ -16,6 +16,7 @@
 
 namespace {
 
+/** @brief Nettoie les guillemets et espaces parasites extraits du HTML. */
 std::string trim_quotes_and_spaces(std::string value) {
     value.erase(std::remove_if(value.begin(), value.end(), [](unsigned char c) {
         return c == '"' || c == '\'' || std::isspace(c);
@@ -23,6 +24,7 @@ std::string trim_quotes_and_spaces(std::string value) {
     return value;
 }
 
+/** @brief Isole le chemin d'une URL en supprimant protocole, domaine et query string. */
 std::string path_from_url(std::string url) {
     const std::string host = "lelscans.net";
     auto hostPosition = url.find(host);
@@ -39,6 +41,7 @@ std::string path_from_url(std::string url) {
     return "/" + url;
 }
 
+/** @brief Découpe un chemin source en segments non vides. */
 std::vector<std::string> split_path(std::string path) {
     path.erase(std::remove(path.begin(), path.end(), '\r'), path.end());
     path.erase(std::remove(path.begin(), path.end(), '\n'), path.end());
@@ -60,6 +63,7 @@ std::vector<std::string> split_path(std::string path) {
     return parts;
 }
 
+/** @brief Convertit un segment de chemin en entier positif. */
 std::optional<int> to_int(const std::string& value) {
     if (value.empty() || !std::all_of(value.begin(), value.end(), [](unsigned char c) { return std::isdigit(c); })) {
         return std::nullopt;
@@ -73,6 +77,7 @@ std::optional<int> to_int(const std::string& value) {
 
 } // namespace
 
+/** @brief Vérifie que l'URL correspond au domaine actuellement supporté. */
 bool LelScansProvider::supports(const std::string& url) const {
     return url.find("lelscans.net") != std::string::npos;
 }
@@ -100,6 +105,9 @@ std::optional<LelScansProvider::ParsedUrl> LelScansProvider::parse_reader_url(co
     return parsed;
 }
 
+/**
+ * @brief Reconstruit l'URL de lecture correspondant à la progression de téléchargement.
+ */
 std::string LelScansProvider::page_url(const ScanMetadata& metadata) const {
     std::string url = metadata.downloadUrl;
     if (!url.empty() && url.back() != '/') {
@@ -108,6 +116,12 @@ std::string LelScansProvider::page_url(const ScanMetadata& metadata) const {
     return url + std::to_string(metadata.downloadProgress.chapter) + "/" + std::to_string(metadata.downloadProgress.page);
 }
 
+/**
+ * @brief Déduit le chapitre et la page de la prochaine URL.
+ *
+ * Les URLs ne correspondant pas à la même base de scan sont rejetées pour éviter qu'un lien
+ * externe ne fasse dériver le téléchargement vers une autre série.
+ */
 std::optional<ScanProgress> LelScansProvider::parse_next_progress(const std::string& baseUrl, const std::string& nextUrl) const {
     if (nextUrl.empty() || nextUrl == "#main_hot" || nextUrl == "/1") {
         return std::nullopt;

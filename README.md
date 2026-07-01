@@ -33,6 +33,33 @@ L’objectif du projet est double :
 
 ---
 
+## Evolutions de cette version
+
+Cette version correspond a la V6 finale demandee. Elle transforme ScanGUI en lecteur local/API/offline plus complet :
+
+- interface GTK avec selecteur **Local direct / Serveur local / Offline** ;
+- bibliotheque visuelle avec cartes, couvertures, recherche, tris, favoris, progression et bouton de reprise ;
+- lecteur enrichi : page simple, double page, mode webtoon vertical, plein ecran, zoom, deplacement a la souris, slider, miniatures et raccourcis ;
+- source de donnees unifiee `ScanDataSource` avec `FileSystemScanDataSource` et `ApiScanDataSource` ;
+- cache API local dans `cache/api` ;
+- synchronisation offline du serveur vers `scan/` via `OfflineLibrarySync` ;
+- file de taches de fond `DownloadQueue` avec progression, pause/reprise cooperative, annulation et retry ;
+- profils locaux et serveur, favoris, marque-pages et historique ;
+- serveur local securise : mutex de controleur, controle anti path traversal, CORS configurable, token admin optionnel, refus admin si non local ;
+- endpoints `/api/version`, `/api/stats`, `/api/offline/manifest`, `/api/search` et front web local ;
+- pipeline OCR/recherche par sidecar `.txt` ou commande externe `SCANGUI_TESSERACT_CMD` ;
+- helper JSON centralise `SimpleJson` ;
+- tests unitaires executables avec `make tests` et CTest.
+
+La documentation detaillee finale se trouve dans :
+
+- `docs/API_SERVER.md` ;
+- `docs/EVOLUTIONS.md` ;
+- `docs/SCANGUI_GUIDE_TECHNIQUE.md` ;
+- `docs/SCANGUI_GUIDE_TECHNIQUE.tex` ;
+- `docs/SCANGUI_GUIDE_TECHNIQUE.pdf`.
+
+
 ## Fonctionnalités
 
 ### Application desktop
@@ -40,10 +67,11 @@ L’objectif du projet est double :
 - Lecture d’images locales organisées par scans, chapitres et pages.
 - Interface graphique native en C++ avec GTKmm.
 - Navigation rapide au clavier et à la souris.
-- Reprise automatique de lecture via un fichier `data.json`.
-- Sauvegarde de la dernière page consultée.
-- Zoom simple sur l’image affichée.
-- Création ou mise à jour d’une lecture depuis une source distante historique.
+- Reprise automatique de lecture via `data.json`, API ou profil local.
+- Sauvegarde de la dernière page consultée par profil.
+- Bibliothèque visuelle avec recherche, tri, favoris, couvertures et reprise.
+- Lecteur enrichi avec plein écran, double page, webtoon, zoom, miniatures, slider, marque-pages et historique.
+- Synchronisation offline depuis le serveur vers le dossier local `scan/`.
 
 ### Serveur local C++
 
@@ -52,9 +80,11 @@ L’objectif du projet est double :
 - Routage REST minimal fait à la main.
 - Exposition de la bibliothèque locale via API HTTP.
 - Indexation des scans dans PostgreSQL.
-- Service des images par endpoint HTTP.
+- Service des images par endpoint HTTP avec controle de chemin avant lecture.
 - Sauvegarde et lecture de la progression via API.
+- Profils, favoris, marque-pages, historique, recherche OCR et manifeste offline.
 - Protection de base contre le path traversal avant de servir les fichiers.
+- Token admin optionnel et refus des routes admin si le serveur n’est pas local.
 
 ### Base de données PostgreSQL
 
@@ -62,6 +92,7 @@ L’objectif du projet est double :
 - Indexation des chapitres.
 - Indexation des pages.
 - Sauvegarde de la progression de lecture par profil.
+- Favoris, marque-pages, historique et textes OCR indexés.
 
 ---
 
@@ -108,7 +139,7 @@ Cette version contient déjà l’abstraction `ScanDataSource`, avec :
 - `FileSystemScanDataSource` pour une lecture directe depuis les fichiers ;
 - `ApiScanDataSource` pour une lecture via le serveur local.
 
-À noter : dans l’état actuel, l’interface GTK historique reste principalement branchée sur le mode fichier direct. La couche API est présente pour faire évoluer le projet vers une lecture entièrement pilotée par serveur local.
+Dans cette version, l’interface GTK passe par `ScanDataSource` et peut basculer entre **Local direct**, **Serveur local** et **Offline** depuis le sélecteur de mode.
 
 ---
 
@@ -709,3 +740,28 @@ make run
 ## Licence
 
 Projet personnel d’apprentissage.
+
+## Mise a jour v6 - Evolutions completes
+
+Cette version ajoute les evolutions demandees : modes Local/Serveur/Offline dans la GUI, bibliotheque visuelle, lecteur enrichi, synchronisation offline, file de telechargement en arriere-plan, profils, favoris, marque-pages, historique, recherche OCR/sidecar, front web local, endpoints serveur et documentation technique complete.
+
+Documentation principale :
+
+- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.md`
+- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.tex`
+- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.pdf`
+
+Validation realisee dans l'environnement de generation :
+
+- `make tests` : OK
+- `make server` : OK
+- CMake avec `SCANGUI_BUILD_GUI=OFF`, serveur et tests : OK
+- `ctest` : OK
+
+La compilation GUI doit etre executee sur une machine disposant de `gtkmm-3.0` et `libcurl`. Le sandbox de generation ne fournit pas `gtkmm-3.0`.
+
+## Version 6.0 - evolutions finales integrees
+
+Cette version ajoute l'integration visible des evolutions demandees : mode Local / Serveur local / Offline dans GTK, bibliotheque avec cartes, recherche, tris et favoris, lecteur double page/webtoon/plein ecran/zoom/miniatures, file de telechargement asynchrone avec pause/reprise/annulation, synchronisation offline de tous les scans serveur vers `./scan`, profils, favoris, marque-pages, historique, recherche OCR via sidecars ou commande externe, front web local et endpoints API de supervision.
+
+Validation dans l'environnement de livraison : `make tests`, `make server` et CMake/CTest en mode serveur/tests sont OK. La compilation GUI necessite `gtkmm-3.0`, absent du sandbox.

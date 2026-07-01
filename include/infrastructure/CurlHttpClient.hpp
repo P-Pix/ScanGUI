@@ -27,8 +27,19 @@ public:
     CurlHttpClient(const CurlHttpClient&) = delete;
     CurlHttpClient& operator=(const CurlHttpClient&) = delete;
 
+    /**
+     * @brief Récupère le contenu texte d'une URL.
+     *
+     * @throws std::runtime_error si libcurl signale une erreur réseau ou HTTP.
+     */
     [[nodiscard]] std::string get_text(const std::string& url) const;
+    /**
+     * @brief Télécharge une ressource vers un fichier local.
+     *
+     * @throws std::runtime_error si le téléchargement ou l'ouverture du fichier échoue.
+     */
     void download_file(const std::string& url, const std::filesystem::path& outputPath) const;
+    /** @brief Envoie un payload JSON en POST et retourne la réponse texte. */
     [[nodiscard]] std::string post_json(const std::string& url, const std::string& jsonBody) const;
 
 private:

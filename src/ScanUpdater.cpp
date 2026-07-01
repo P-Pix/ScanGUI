@@ -14,6 +14,9 @@
 #include <algorithm>
 #include <utility>
 
+/**
+ * @brief Injecte les dépendances réseau, parsing et persistance du service.
+ */
 ScanUpdater::ScanUpdater(JsonScanRepository repository, CurlHttpClient& httpClient, LelScansProvider provider)
     : repository_(std::move(repository)), httpClient_(httpClient), provider_(std::move(provider)) {
 }

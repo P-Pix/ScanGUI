@@ -28,7 +28,11 @@ Scan::Scan(std::string folder, int page, int chapitre, int width, int height)
 
 Scan::~Scan() = default;
 
+/**
+ * @brief Ouvre un dossier local et affiche sa première page disponible.
+ */
 void Scan::set_folder(const std::string& folder) {
+    directPagePath_.clear();
     session_.open(folder, session_.progress());
 }
 
@@ -36,6 +40,7 @@ std::string Scan::get_folder() const {
     return session_.root().string();
 }
 
+/** @brief Demande à la session métier la page suivante puis l'affiche. */
 bool Scan::next_page() {
     const auto page = session_.next_page();
     if (!page) {
@@ -44,6 +49,7 @@ bool Scan::next_page() {
     return set_page(page->path);
 }
 
+/** @brief Demande à la session métier la page précédente puis l'affiche. */
 bool Scan::previous_page() {
     const auto page = session_.previous_page();
     if (!page) {
@@ -56,9 +62,15 @@ std::string Scan::get_page() const {
     return session_.current_page_path().string();
 }
 
+/**
+ * @brief Ouvre explicitement une position locale chapitre/page.
+ *
+ * La méthode conserve l'API historique utilisée par les anciens callbacks de la fenêtre.
+ */
 bool Scan::set_page(const std::string& folder, int chapitre, int page_number) {
     ScanProgress progress{chapitre, page_number};
     progress.normalize();
+    directPagePath_.clear();
     session_.open(folder, progress);
 
     if (!session_.current_page()) {
@@ -70,13 +82,22 @@ bool Scan::set_page(const std::string& folder, int chapitre, int page_number) {
 }
 
 /**
- * @brief Charge et affiche une image depuis un chemin local.
+ * @brief Affiche directement un fichier image déjà résolu.
  *
- * Objectif projet :
- * Centraliser le redimensionnement et la gestion d'erreur image pour éviter que la fenêtre
- * principale manipule directement `Gdk::Pixbuf`.
+ * Ce chemin sert aux modes API/offline où la fenêtre principale pilote elle-même la position.
  */
 bool Scan::set_page(const std::filesystem::path& page_path) {
+    directPagePath_ = page_path;
+    return load_image(page_path);
+}
+
+/**
+ * @brief Charge, redimensionne et affiche une image depuis le disque.
+ *
+ * Les erreurs de chargement GdkPixbuf sont capturées pour éviter qu'une image corrompue fasse
+ * tomber toute l'application graphique.
+ */
+bool Scan::load_image(const std::filesystem::path& page_path) {
     if (page_path.empty() || !std::filesystem::exists(page_path)) {
         clear();
         return false;
@@ -111,12 +132,14 @@ bool Scan::set_page(const std::filesystem::path& page_path) {
     }
 }
 
+/** @brief Augmente les dimensions demandées avant de recharger l'image. */
 void Scan::zoom_in() {
     width_ = std::max(1, static_cast<int>(std::lround(width_ * 1.1)));
     height_ = std::max(1, static_cast<int>(std::lround(height_ * 1.1)));
     display_current_page();
 }
 
+/** @brief Réduit les dimensions demandées tout en gardant un minimum lisible. */
 void Scan::zoom_out() {
     width_ = std::max(1, static_cast<int>(std::lround(width_ * 0.9)));
     height_ = std::max(1, static_cast<int>(std::lround(height_ * 0.9)));
@@ -158,9 +181,13 @@ void Scan::set_height(int height) {
  */
 bool Scan::display_current_page() {
     const auto page = session_.current_page();
-    if (!page) {
-        clear();
-        return false;
+    if (page) {
+        directPagePath_ = page->path;
+        return load_image(page->path);
     }
-    return set_page(page->path);
+    if (!directPagePath_.empty()) {
+        return load_image(directPagePath_);
+    }
+    clear();
+    return false;
 }

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <iomanip>
 #include <sstream>
 
@@ -78,6 +79,20 @@ HttpResponse HttpResponse::binary(int statusCode, std::string contentType, std::
     return response;
 }
 
+/**
+ * @brief Prépare une réponse dont le fichier sera streamé par `HttpServer`.
+ */
+HttpResponse HttpResponse::file(int statusCode, std::string contentType, std::string path) {
+    HttpResponse response;
+    response.status = statusCode;
+    response.reason = reason_for_status(statusCode);
+    response.headers["Content-Type"] = std::move(contentType);
+    response.headers["Cache-Control"] = "private, max-age=3600";
+    response.streamFile = true;
+    response.streamFilePath = std::move(path);
+    return response;
+}
+
 HttpResponse HttpResponse::not_found(std::string message) {
     return json(404, error_json(message));
 }
@@ -99,20 +114,26 @@ HttpResponse HttpResponse::server_error(std::string message) {
  *
  * @return Réponse complète prête à être envoyée au client.
  */
-std::string HttpResponse::serialize() const {
+std::string HttpResponse::serialize_headers(std::size_t contentLength) const {
     std::ostringstream out;
     out << "HTTP/1.1 " << status << ' ' << reason << "\r\n";
-    out << "Content-Length: " << body.size() << "\r\n";
+    out << "Content-Length: " << contentLength << "\r\n";
     out << "Connection: close\r\n";
-    out << "Access-Control-Allow-Origin: http://127.0.0.1:8787\r\n";
-    out << "Access-Control-Allow-Headers: Content-Type\r\n";
+    const char* corsOrigin = std::getenv("SCANGUI_CORS_ORIGIN");
+    out << "Access-Control-Allow-Origin: " << (corsOrigin != nullptr && std::string(corsOrigin).size() > 0 ? corsOrigin : "http://127.0.0.1:8787") << "\r\n";
+    out << "Access-Control-Allow-Headers: Content-Type, X-ScanGUI-Admin-Token, x-scangui-admin-token\r\n";
     out << "Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS\r\n";
     for (const auto& [key, value] : headers) {
         out << key << ": " << value << "\r\n";
     }
     out << "\r\n";
-    out << body;
     return out.str();
+}
+
+std::string HttpResponse::serialize() const {
+    std::string result = serialize_headers(body.size());
+    result += body;
+    return result;
 }
 
 /**

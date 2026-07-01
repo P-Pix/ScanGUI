@@ -164,6 +164,9 @@ void CurlHttpClient::download_file(const std::string& url, const std::filesystem
 }
 
 
+/**
+ * @brief Envoie un payload JSON en POST et retourne la réponse texte.
+ */
 std::string CurlHttpClient::post_json(const std::string& url, const std::string& jsonBody) const {
     ensure_curl_global_state();
     CURL* curl = curl_easy_init();

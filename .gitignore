@@ -26,3 +26,11 @@ scan/
 .vscode/
 .idea/
 *.swp
+
+# Local configuration and generated caches
+.env
+cache/
+*.aux
+*.log
+*.toc
+*.out

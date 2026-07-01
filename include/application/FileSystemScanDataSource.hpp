@@ -25,16 +25,31 @@ class FileSystemScanDataSource final : public ScanDataSource {
 public:
     explicit FileSystemScanDataSource(std::filesystem::path scanRoot = "scan");
 
-    [[nodiscard]] std::vector<ScanSummary> list_scans() const override;
+    /** @brief Parcourt le dossier local et enrichit les résultats avec la progression locale. */
+    [[nodiscard]] std::vector<ScanSummary> list_scans(const std::string& profile = "default") const override;
     [[nodiscard]] std::vector<int> list_chapters(const std::string& scanId) const override;
     [[nodiscard]] std::vector<ScanPageInfo> list_pages(const std::string& scanId, int chapter) const override;
+    /** @brief Résout directement un fichier image dans `scan/<scan>/<chapitre>/<page>`. */
     [[nodiscard]] std::filesystem::path materialize_page(const std::string& scanId, ScanProgress progress) const override;
     [[nodiscard]] ScanProgress load_progress(const std::string& scanId, const std::string& profile = "default") const override;
+    /** @brief Met à jour `data.json` et l'historique local du profil actif. */
     void save_progress(const std::string& scanId, ScanProgress progress, const std::string& profile = "default") const override;
+
+    [[nodiscard]] std::vector<ProfileSummary> list_profiles() const override;
+    void save_profile(const ProfileSummary& profile) const override;
+    [[nodiscard]] std::vector<std::string> list_favorites(const std::string& profile) const override;
+    void set_favorite(const std::string& scanId, bool favorite, const std::string& profile = "default") const override;
+    [[nodiscard]] std::vector<BookmarkSummary> list_bookmarks(const std::string& scanId, const std::string& profile = "default") const override;
+    BookmarkSummary add_bookmark(const std::string& scanId, ScanProgress progress, const std::string& note, const std::string& profile = "default") const override;
+    [[nodiscard]] std::vector<HistoryEntry> list_history(const std::string& profile = "default", int limit = 20) const override;
+    [[nodiscard]] std::vector<SearchResultSummary> search_text(const std::string& query, int limit = 20) const override;
 
 private:
     std::filesystem::path scanRoot_;
     JsonScanRepository repository_;
+
+    [[nodiscard]] std::filesystem::path profile_root(const std::string& profile) const;
+    [[nodiscard]] std::filesystem::path profile_file(const std::string& profile, const std::string& name) const;
 };
 
 #endif

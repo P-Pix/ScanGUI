@@ -57,10 +57,12 @@ public:
 
 private:
     ScanSession session_;
+    std::filesystem::path directPagePath_{};
     int width_{0};
     int height_{0};
 
     [[nodiscard]] bool display_current_page();
+    [[nodiscard]] bool load_image(const std::filesystem::path& page_path);
 };
 
 #endif

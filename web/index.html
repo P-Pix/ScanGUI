@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScanGUI Web</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>ScanGUI Web</h1>
+      <p>Client web local servi par ScanGUIServer</p>
+    </div>
+    <div class="controls">
+      <input id="profile" placeholder="profil" value="default">
+      <input id="search" placeholder="Rechercher un scan ou du texte OCR">
+      <select id="sort">
+        <option value="title">Titre</option>
+        <option value="lastRead">Derniere lecture</option>
+        <option value="progress">Avancement</option>
+        <option value="chapters">Chapitres</option>
+        <option value="pages">Pages</option>
+      </select>
+      <label><input type="checkbox" id="favoritesOnly"> Favoris</label>
+      <button id="refresh">Actualiser</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="section-title">
+        <h2>Bibliotheque</h2>
+        <button id="resume">Reprendre</button>
+      </div>
+      <div id="library" class="grid"></div>
+    </section>
+
+    <section class="panel reader-panel">
+      <div class="section-title">
+        <h2 id="readerTitle">Lecteur</h2>
+        <div class="reader-actions">
+          <button id="prev">Precedent</button>
+          <button id="next">Suivant</button>
+          <button id="favorite">Favori</button>
+          <button id="bookmark">Marque-page</button>
+        </div>
+      </div>
+      <div id="meta" class="meta">Aucun scan ouvert.</div>
+      <img id="page" alt="Page courante" class="page hidden">
+    </section>
+
+    <section class="panel">
+      <h2>Recherche OCR</h2>
+      <div id="ocrResults" class="results"></div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

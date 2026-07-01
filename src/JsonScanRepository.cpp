@@ -7,9 +7,10 @@
  */
 
 #include "infrastructure/JsonScanRepository.hpp"
+#include "infrastructure/SimpleJson.hpp"
 
+#include <cmath>
 #include <fstream>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 
@@ -25,57 +26,34 @@ std::string read_file(const std::filesystem::path& path) {
     return buffer.str();
 }
 
-std::string escape_json_string(const std::string& value) {
-    std::string escaped;
-    escaped.reserve(value.size());
-    for (char c : value) {
-        switch (c) {
-            case '"': escaped += "\\\""; break;
-            case '\\': escaped += "\\\\"; break;
-            case '\n': escaped += "\\n"; break;
-            case '\r': escaped += "\\r"; break;
-            case '\t': escaped += "\\t"; break;
-            default: escaped += c; break;
-        }
+std::optional<scangui::json::Value> object_field(const scangui::json::Value& root, const std::string& key) {
+    const auto* field = scangui::json::find_field(root, key);
+    if (field == nullptr || !field->is_object()) {
+        return std::nullopt;
     }
-    return escaped;
+    return *field;
 }
 
-std::optional<std::string> extract_section(const std::string& content, const std::string& sectionName) {
-    const std::regex sectionRegex("\\\"" + sectionName + "\\\"\\s*:\\s*\\{([^}]*)\\}");
-    std::smatch match;
-    if (std::regex_search(content, match, sectionRegex) && match.size() > 1) {
-        return match[1].str();
+std::optional<int> int_field(const scangui::json::Value& object, const std::string& key) {
+    const auto* field = scangui::json::find_field(object, key);
+    if (field == nullptr || !field->is_number()) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    return static_cast<int>(std::llround(field->as_number()));
 }
 
-std::optional<int> extract_int(const std::string& content, const std::string& key) {
-    const std::regex valueRegex("\\\"" + key + "\\\"\\s*:\\s*([0-9]+)");
-    std::smatch match;
-    if (std::regex_search(content, match, valueRegex) && match.size() > 1) {
-        try {
-            return std::stoi(match[1].str());
-        } catch (...) {
-            return std::nullopt;
-        }
+std::optional<std::string> string_field(const scangui::json::Value& object, const std::string& key) {
+    const auto* field = scangui::json::find_field(object, key);
+    if (field == nullptr || !field->is_string()) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    return field->as_string();
 }
 
-std::optional<std::string> extract_string(const std::string& content, const std::string& key) {
-    const std::regex valueRegex("\\\"" + key + "\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"");
-    std::smatch match;
-    if (std::regex_search(content, match, valueRegex) && match.size() > 1) {
-        return match[1].str();
-    }
-    return std::nullopt;
-}
-
-ScanProgress read_progress(const std::string& section) {
+ScanProgress read_progress(const scangui::json::Value& section) {
     ScanProgress progress;
-    progress.chapter = extract_int(section, "chapter").value_or(1);
-    progress.page = extract_int(section, "page").value_or(1);
+    progress.chapter = int_field(section, "chapter").value_or(1);
+    progress.page = int_field(section, "page").value_or(1);
     progress.normalize();
     return progress;
 }
@@ -100,13 +78,17 @@ std::optional<ScanMetadata> JsonScanRepository::load(const std::filesystem::path
 
     ScanMetadata metadata;
     const std::string content = read_file(path);
+    const auto root = scangui::json::parse(content);
+    if (!root || !root->is_object()) {
+        return std::nullopt;
+    }
 
-    if (auto download = extract_section(content, "download")) {
-        metadata.downloadUrl = extract_string(*download, "url").value_or("");
+    if (auto download = object_field(*root, "download")) {
+        metadata.downloadUrl = string_field(*download, "url").value_or("");
         metadata.downloadProgress = read_progress(*download);
     }
 
-    if (auto save = extract_section(content, "save")) {
+    if (auto save = object_field(*root, "save")) {
         metadata.saveProgress = read_progress(*save);
     } else {
         metadata.saveProgress = metadata.downloadProgress;
@@ -116,6 +98,11 @@ std::optional<ScanMetadata> JsonScanRepository::load(const std::filesystem::path
     return metadata;
 }
 
+/**
+ * @brief Écrit les métadonnées complètes d'un scan dans `data.json`.
+ *
+ * @throws std::runtime_error si le fichier ne peut pas être ouvert en écriture.
+ */
 void JsonScanRepository::save(const std::filesystem::path& scanFolder, const ScanMetadata& metadata) const {
     std::filesystem::create_directories(scanFolder);
 
@@ -129,7 +116,7 @@ void JsonScanRepository::save(const std::filesystem::path& scanFolder, const Sca
 
     output << "{\n"
            << "  \"download\": {\n"
-           << "    \"url\": \"" << escape_json_string(normalized.downloadUrl) << "\",\n"
+           << "    \"url\": \"" << scangui::json::escape(normalized.downloadUrl) << "\",\n"
            << "    \"chapter\": " << normalized.downloadProgress.chapter << ",\n"
            << "    \"page\": " << normalized.downloadProgress.page << "\n"
            << "  },\n"

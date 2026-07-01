@@ -27,6 +27,11 @@ public:
     using Handler = std::function<HttpResponse(const HttpRequest&)>;
 
     HttpServer(std::string host, int port, Handler handler);
+    /**
+     * @brief Lance la boucle d'écoute bloquante du serveur local.
+     *
+     * Le serveur accepte les connexions entrantes et délègue chaque requête au handler injecté.
+     */
     void start();
 
 private:

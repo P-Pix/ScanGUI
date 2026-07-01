@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(SCANGUI_BUILD_GUI "Build the GTK desktop client" ON)
 option(SCANGUI_BUILD_SERVER "Build the local C++ HTTP API server" ON)
+option(SCANGUI_BUILD_TESTS "Build lightweight unit tests" ON)
 
 find_package(PkgConfig REQUIRED)
 
@@ -71,4 +72,21 @@ if(SCANGUI_BUILD_SERVER)
         -Wextra
         -Wpedantic
     )
+endif()
+
+if(SCANGUI_BUILD_TESTS)
+    add_executable(ScanGUITests
+        tests/run_unit_tests.cpp
+        src/ScanSession.cpp
+        src/JsonScanRepository.cpp
+        src/application/FileSystemScanDataSource.cpp
+        src/application/OfflineLibrarySync.cpp
+        src/application/DownloadQueue.cpp
+        server_src/HttpTypes.cpp
+    )
+    target_include_directories(ScanGUITests PRIVATE include)
+    target_compile_options(ScanGUITests PRIVATE -Wall -Wextra -Wpedantic)
+    target_link_libraries(ScanGUITests PRIVATE pthread)
+    enable_testing()
+    add_test(NAME ScanGUITests COMMAND ScanGUITests)
 endif()

@@ -26,10 +26,16 @@ std::string Download_Scan::get_website() const {
     return website_;
 }
 
+/**
+ * @brief Télécharge le HTML d'une page source via le client HTTP contrôlé.
+ */
 std::string Download_Scan::get_website_content(const std::string& site) const {
     return httpClient_.get_text(site);
 }
 
+/**
+ * @brief Télécharge l'image d'une page vers le fichier local demandé.
+ */
 void Download_Scan::download_picture_page(const std::string& site, const std::filesystem::path& file_name) const {
     if (!lelScansProvider_.supports(site)) {
         throw std::runtime_error("Source non supportee pour le telechargement: " + site);

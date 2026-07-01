@@ -24,6 +24,11 @@
  */
 class JsonScanRepository {
 public:
+    /**
+     * @brief Lit les métadonnées `data.json` d'un scan.
+     *
+     * @return Métadonnées normalisées, ou `std::nullopt` si le fichier est absent ou inexploitable.
+     */
     [[nodiscard]] std::optional<ScanMetadata> load(const std::filesystem::path& scanFolder) const;
     void save(const std::filesystem::path& scanFolder, const ScanMetadata& metadata) const;
     void save_progress(const std::filesystem::path& scanFolder, ScanProgress progress) const;
