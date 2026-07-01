@@ -740,28 +740,3 @@ make run
 ## Licence
 
 Projet personnel d’apprentissage.
-
-## Mise a jour v6 - Evolutions completes
-
-Cette version ajoute les evolutions demandees : modes Local/Serveur/Offline dans la GUI, bibliotheque visuelle, lecteur enrichi, synchronisation offline, file de telechargement en arriere-plan, profils, favoris, marque-pages, historique, recherche OCR/sidecar, front web local, endpoints serveur et documentation technique complete.
-
-Documentation principale :
-
-- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.md`
-- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.tex`
-- `docs/SCANGUI_GUIDE_TECHNIQUE_V6.pdf`
-
-Validation realisee dans l'environnement de generation :
-
-- `make tests` : OK
-- `make server` : OK
-- CMake avec `SCANGUI_BUILD_GUI=OFF`, serveur et tests : OK
-- `ctest` : OK
-
-La compilation GUI doit etre executee sur une machine disposant de `gtkmm-3.0` et `libcurl`. Le sandbox de generation ne fournit pas `gtkmm-3.0`.
-
-## Version 6.0 - evolutions finales integrees
-
-Cette version ajoute l'integration visible des evolutions demandees : mode Local / Serveur local / Offline dans GTK, bibliotheque avec cartes, recherche, tris et favoris, lecteur double page/webtoon/plein ecran/zoom/miniatures, file de telechargement asynchrone avec pause/reprise/annulation, synchronisation offline de tous les scans serveur vers `./scan`, profils, favoris, marque-pages, historique, recherche OCR via sidecars ou commande externe, front web local et endpoints API de supervision.
-
-Validation dans l'environnement de livraison : `make tests`, `make server` et CMake/CTest en mode serveur/tests sont OK. La compilation GUI necessite `gtkmm-3.0`, absent du sandbox.
